@@ -5,7 +5,10 @@
 # 03.Dec.2024
 
 import Pkg 
-using JuMP,Gurobi, CSV,DataFrames,LinearAlgebra, XLSX # (here we choose Gurobi as it can solve the product of binary and continuous variables, we don't need to linearlize the nonlinear terms manually)
+using JuMP,Gurobi, CSV,DataFrames,LinearAlgebra, XLSX, IterTools  
+
+include("dataset_gene.jl")
+include("offline_trainning.jl")
 
 #----------------------------------IEEE-30 Bus System Data Introduction----------------------------------
 df = DataFrame(CSV.File("/Users/kl/Desktop/single_level_UC_SCL/Loadcurves.csv"))        
@@ -28,7 +31,7 @@ Yₛ₉ = zeros(numnodes, numnodes)      # define admittance matrix of the SGs
 for k in 1:branch_num               #  calculate the admittance matrix of the transmission lines
     i = linepara[k, 1]                  # bus from
     j = linepara[k, 2]                   # bus to
-    Yₗᵢₙₑ[i, j] = -1/linepara[k, 4]        # off-diagonal elements
+    Yₗᵢₙₑ[i, j] = -1/linepara[k, 4]*2        # off-diagonal elements
     Yₗᵢₙₑ[j, i] = Yₗᵢₙₑ[i, j]                # symmetry
 end
 for k in 1:numnodes
@@ -37,27 +40,26 @@ end
 
 for k in 1:size(SGpara, 1)                     # calculate the admittance matrix of the SGs
     i = SGpara[k, 1]                         # bus from
-    Yₛ₉[i, i] = 1/SGpara[k, 2]                # diagonal elements 
+    Yₛ₉[i, i] = 1/SGpara[k, 2]/3                # diagonal elements 
 end 
 
 I_IBG=1  # SCC (p.u): Iₛ₉=Eₛ₉/X_dg  & I_IBG (pre-defined)
-Iₗᵢₘ=2    # SCC limit
+Iₗᵢₘ=5    # SCC limit
 β=0.95
 Eₛ₉=1
 Eₛ₉=β*Eₛ₉
 Iₛ₉=zeros(1,size(SGpara, 1))
 for k in 1:size(SGpara, 1)
-    Iₛ₉[1,k]=Eₛ₉/SGpara[k, 2]
+    Iₛ₉[1,k]=Eₛ₉/SGpara[k, 2]/3
 end
 
-buses_load_operator_1=[2 3 4 5 7 12 13 14 15 16 17 18 19 20 23]
-buses_load_operator_2=[8 10 21 24 26 29]
-
-
+v=0.05
+I_sc₄, matrix_ω = dataset_gene()  # data set generation
+k_Fg, k_Fc, k_Fm, obj= offline_trainning(I_sc₄, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
 
 #-----------------------------------Define Parameters for Optimization
-Pˢᴳₘₐₓ=[15,14,12,13,   15,13   ]
-Pˢᴳₘᵢₙ=Pˢᴳₘₐₓ- 6*ones(1,size(SGpara, 1))'
+Pˢᴳₘₐₓ=[26 22 18 20 23 18]
+Pˢᴳₘᵢₙ=[10 8 4 6 10 5]
 Rₘₐₓ=Pˢᴳₘᵢₙ
 
 Kᵁ=[3.25,2.72,1.43,2.03,  3.31,2.11]
@@ -71,20 +73,25 @@ T=24
 #-----------------------------------Define Model
 model= Model()
 
+
 #-------Define Variales
-# For operator 1
 @variable(model, Pˢᴳ²[1:T])                # generation of SG in bus 2
 @variable(model, Pˢᴳ³[1:T])                # generation of SG in bus 3
 @variable(model, Pˢᴳ⁴[1:T])                # generation of SG in bus 4
 @variable(model, Pˢᴳ⁵[1:T])                # generation of SG in bus 5
+@variable(model, Pˢᴳ²⁷[1:T])                # generation of SG in bus 27
+@variable(model, Pˢᴳ³⁰[1:T])                # generation of SG in bus 30
 
 @variable(model, yˢᴳ²[1:T],Bin)            # on/off status of SG in bus 2
 @variable(model, yˢᴳ³[1:T],Bin)            # on/off status of SG in bus 3
-@variable(model, yˢᴳ⁴[1:T],Bin)            # on/off status of SG in bus 2
-@variable(model, yˢᴳ⁵[1:T],Bin)            # on/off status of SG in bus 3
+@variable(model, yˢᴳ⁴[1:T],Bin)            # on/off status of SG in bus 4
+@variable(model, yˢᴳ⁵[1:T],Bin)            # on/off status of SG in bus 5
+@variable(model, yˢᴳ²⁷[1:T],Bin)            # on/off status of SG in bus 27
+@variable(model, yˢᴳ³⁰[1:T],Bin)            # on/off status of SG in bus 30
 
 @variable(model, Pᴵᴮᴳ¹[1:T])               # generation of IBG (WT) in bus 1
 @variable(model, Pᴵᴮᴳ²³[1:T])              # generation of IBG (WT) in bus 23
+@variable(model, Pᴵᴮᴳ²⁶[1:T])               # generation of IBG (WT) in bus 26
 
 @variable(model, Cᵁ²[1:T])                 # startup costs for SG in bus 2
 @variable(model, Cᴰ²[1:T])                 # shutdown costs for SG in bus 2
@@ -94,42 +101,22 @@ model= Model()
 @variable(model, Cᴰ⁴[1:T])                 # shutdown costs for SG in bus 4
 @variable(model, Cᵁ⁵[1:T])                 # startup costs for SG in bus 5
 @variable(model, Cᴰ⁵[1:T])                 # shutdown costs for SG in bus 5
-
-# For operator 2
-@variable(model, Pˢᴳ²⁷[1:T])                # generation of SG in bus 27
-@variable(model, Pˢᴳ³⁰[1:T])                # generation of SG in bus 30
-
-@variable(model, yˢᴳ²⁷[1:T],Bin)            # on/off status of SG in bus 27
-@variable(model, yˢᴳ³⁰[1:T],Bin)            # on/off status of SG in bus 30
-
-@variable(model, Pᴵᴮᴳ²⁶[1:T])               # generation of IBG (WT) in bus 26
-
 @variable(model, Cᵁ²⁷[1:T])                 # startup costs for SG in bus 27
 @variable(model, Cᴰ²⁷[1:T])                 # shutdown costs for SG in bus 27
 @variable(model, Cᵁ³⁰[1:T])                 # startup costs for SG in bus 30
 @variable(model, Cᴰ³⁰[1:T])                 # shutdown costs for SG in bus 30
-
 
 @variable(model, α₁[1:T])                   # percentage of IBG penetration  
 @variable(model, α₂₃[1:T])
 @variable(model, α₂₆[1:T])
 
 #-------Define Constraints
-Pᴰ¹=zeros(1,T)
+Pᴰ=zeros(1,T)
 for t in 1:T
-    for k in 1:size(buses_load_operator_1, 2)
-        Pᴰ¹[t]=Pᴰ¹[t]+loadcurve[buses_load_operator_1[k],t+2]*0.8
-    end
-end
-Pᴰ²=zeros(1,T)
-for t in 1:T
-    for k in 1:size(buses_load_operator_2, 2)
-        Pᴰ²[t]=Pᴰ²[t]+loadcurve[buses_load_operator_2[k],t+2]*0.8
-    end
+    Pᴰ[t]=Pᴰ[t]+sum(loadcurve[:,t+2])
 end
 
-@constraint(model, Pˢᴳ²+Pˢᴳ³+Pˢᴳ⁴+Pˢᴳ⁵+Pᴵᴮᴳ¹+Pᴵᴮᴳ²³==Pᴰ¹')     # power balance for operators
-@constraint(model, Pˢᴳ²⁷+Pˢᴳ³⁰+Pᴵᴮᴳ²⁶==Pᴰ²')                   
+@constraint(model, Pˢᴳ²+Pˢᴳ³+Pˢᴳ⁴+Pˢᴳ⁵+Pˢᴳ²⁷+Pˢᴳ³⁰+Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶==Pᴰ')     # power balance              
 
 @constraint(model, Pᴵᴮᴳ¹ .<= Vector(windcurves[1, 2:end]))        # wind power limit
 @constraint(model, Pᴵᴮᴳ¹>=0)
@@ -140,15 +127,14 @@ end
 
 @constraint(model, α₁.<=1)                   # IBG online capacity limit
 @constraint(model, α₁>=0)
-@constraint(model, α₁.*Pᴰ¹'==Pᴵᴮᴳ¹)
-
 @constraint(model, α₂₃.<=1)                   
 @constraint(model, α₂₃>=0)
-@constraint(model, α₂₃.*Pᴰ¹'==Pᴵᴮᴳ²³)
-
 @constraint(model, α₂₆.<=1)                   
 @constraint(model, α₂₆>=0)
-@constraint(model, α₂₆.*Pᴰ²'==Pᴵᴮᴳ²⁶)
+
+@constraint(model, α₁.*Pᴰ'==Pᴵᴮᴳ¹)
+@constraint(model, α₂₃.*Pᴰ'==Pᴵᴮᴳ²³)
+@constraint(model, α₂₆.*Pᴰ'==Pᴵᴮᴳ²⁶)
 
 @constraint(model, Pˢᴳ².<=yˢᴳ²*Pˢᴳₘₐₓ[1])       # bounds for the output of SGs
 @constraint(model, yˢᴳ²*Pˢᴳₘᵢₙ[1].<=Pˢᴳ²)
@@ -206,7 +192,6 @@ for t in 1:T-1       # bounds for the ramp of SGs
     @constraint(model, -Rₘₐₓ[6]<=Pˢᴳ³⁰[t+1]-Pˢᴳ³⁰[t])             
 end
          
-
 @variable(model, Z[1:T,  1:numnodes,  1:numnodes])  # Define the dynamic reactance matrix with time
 @variable(model, Y_total[1:T, 1:numnodes, 1:numnodes])  # Define the dynamic admittance matrix with time
 
@@ -243,25 +228,23 @@ for t in 1:T   # bounds for the SCC of SG in bus 13
 end
 
 #-------Define Objective Functions
-# For operator 1
-No_load_cost_1=sum(Cⁿˡ[1].*yˢᴳ²)+sum(Cⁿˡ[2].*yˢᴳ³)+sum(Cⁿˡ[3].*yˢᴳ⁴)+sum(Cⁿˡ[4].*yˢᴳ⁵)     # no-load cost
-Generation_cost_1=sum(Cᵍᵐ[1].*Pˢᴳ²)+sum(Cᵍᵐ[2].*Pˢᴳ³)+sum(Cᵍᵐ[3].*Pˢᴳ⁴)+sum(Cᵍᵐ[4].*Pˢᴳ⁵)    # generation cost
-Onoff_cost_1=sum(Cᵁ²)+sum(Cᴰ²)+sum(Cᵁ³)+sum(Cᴰ³)+sum(Cᵁ⁴)+sum(Cᴰ⁴)+sum(Cᵁ⁵)+sum(Cᴰ⁵)    # on/off cost
-@objective(model, Min, No_load_cost_1+   Generation_cost_1+     Onoff_cost_1)  # objective function
-
-# For operator 2
-No_load_cost_2=sum(Cⁿˡ[5].*yˢᴳ²⁷)+sum(Cⁿˡ[6].*yˢᴳ³⁰)     # no-load cost
-Generation_cost_2=sum(Cᵍᵐ[5].*Pˢᴳ²⁷)+sum(Cᵍᵐ[6].*Pˢᴳ³⁰)    # generation cost
-Onoff_cost_2=sum(Cᵁ²⁷)+sum(Cᴰ²⁷)+sum(Cᵁ³⁰)+sum(Cᴰ³⁰)    # on/off cost
-@objective(model, Min, No_load_cost_2+   Generation_cost_2+     Onoff_cost_2)  # objective function
+No_load_cost=sum(Cⁿˡ[1].*yˢᴳ²)+sum(Cⁿˡ[2].*yˢᴳ³)+sum(Cⁿˡ[3].*yˢᴳ⁴)+sum(Cⁿˡ[4].*yˢᴳ⁵)+sum(Cⁿˡ[5].*yˢᴳ²⁷)+sum(Cⁿˡ[6].*yˢᴳ³⁰)      # no-load cost
+Generation_cost=sum(Cᵍᵐ[1].*Pˢᴳ²)+sum(Cᵍᵐ[2].*Pˢᴳ³)+sum(Cᵍᵐ[3].*Pˢᴳ⁴)+sum(Cᵍᵐ[4].*Pˢᴳ⁵)+sum(Cᵍᵐ[5].*Pˢᴳ²⁷)+sum(Cᵍᵐ[6].*Pˢᴳ³⁰)    # generation cost
+Onoff_cost=sum(Cᵁ²)+sum(Cᴰ²)+sum(Cᵁ³)+sum(Cᴰ³)+sum(Cᵁ⁴)+sum(Cᴰ⁴)+sum(Cᵁ⁵)+sum(Cᴰ⁵)+sum(Cᵁ²⁷)+sum(Cᴰ²⁷)+sum(Cᵁ³⁰)+sum(Cᴰ³⁰)     # on/off cost
+@objective(model, Min, No_load_cost+ Generation_cost+ Onoff_cost)  # objective function
 #-----------------------------------Solve and Output Results
 set_optimizer(model , Gurobi.Optimizer)
 # set_attribute(model, "limits/gap", 0.0280)
 # set_time_limit_sec(model, 700.0)
 optimize!(model)
 
+#-----------------------------------Calculate SCC at each bus
 
-yˢᴳ²=JuMP.value.(yˢᴳ²)
-# α=JuMP.value.(α)
-Z=JuMP.value.(Z)
-println(value.( Z[1,3,1]))
+
+
+
+
+# yˢᴳ²=JuMP.value.(yˢᴳ²)
+# α₂₆=JuMP.value.(α₂₆)
+#Z=JuMP.value.(Z)
+#println(value.( Z[1,3,1]))
