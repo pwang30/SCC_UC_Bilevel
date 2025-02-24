@@ -1,16 +1,11 @@
- function dataset_gene() 
+ function dataset_gene(I_IBG,β) 
 #----------------------------------IEEE-30 Bus System Data Introduction----------------------------------
-df = DataFrame(CSV.File("/Users/kl/Desktop/single_level_UC_SCL/Loadcurves.csv"))        
-loadcurve=df[:,:]  
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/Windcurves.csv") ) 
-windcurves=df[:,:]
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/SGpara.csv") ) 
+df = DataFrame(CSV.File( "/Users/ME2/Desktop/scl_ieee30/SGpara.csv") ) 
 SGpara=df[:,:]
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/Linespara.csv" )) 
+df = DataFrame(CSV.File( "/Users/ME2/Desktop/scl_ieee30/Linespara.csv" )) 
 linepara=df[:,:]
 
-
-#-----------------------------------Calculate admittance matrixs for SCC constraints----------------------------------
+#-----------------------------------Calculate Admittance Matrixs for SCC constraints----------------------------------
 numnodes=30                         # number of nodes
 branch_num= size(linepara, 1)       # number of branches
 Yₗᵢₙₑ= zeros(numnodes, numnodes)     # define admittance matrix of the transmission lines
@@ -32,16 +27,12 @@ for k in 1:size(SGpara, 1)                  # calculate the ADMITTANCE MATRIX of
 end 
 
 num_IBG=3
-I_IBG=1  # SCC (p.u): Iₛ₉=Eₛ₉/X_dg  & I_IBG (pre-defined)
-Iₗᵢₘ=2    # SCC limit
-β=0.95
 Eₛ₉=1
 Eₛ₉=β*Eₛ₉
 Iₛ₉=zeros(1,size(SGpara, 1))
 for k in 1:size(SGpara, 1)
     Iₛ₉[1,k]=Eₛ₉/SGpara[k, 2]/3
 end
-
 
 
 #------------Evaluate the SCC at fault bus F, let's say F=4, for the generator in bus 4
@@ -86,10 +77,10 @@ I_sc₄=zeros(Ω,1)               # SCC at fault bus F=4
 
 for k in 1:Ω
     status_SGs = matrix_ω[k, 1:size(SGpara, 1)]  # status of SGs
-    status_IBG = matrix_ω[k, size(SGpara, 1) + 1:size(SGpara, 1) + 3]  # status of IBG
+    status_IBG = matrix_ω[k, size(SGpara, 1) + 1:size(SGpara, 1) + num_IBG]  # status of IBG
     Yₛ₉_status .= 0  # reset Yₛ₉_status matrix
     for i in 1:size(SGpara, 1)
-        Yₛ₉_status[SGpara[i, 1], SGpara[i, 1]] = 1 / SGpara[i, 2] * status_SGs[i]  # status of SGs
+        Yₛ₉_status[SGpara[i, 1], SGpara[i, 1]] = 1/SGpara[i, 2]/3 * status_SGs[i]  # status of SGs
     end
 
     Y_total .= Yₗᵢₙₑ + Yₛ₉_status  # calculate the total admittance matrix
@@ -97,7 +88,7 @@ for k in 1:Ω
 
     I_sc₄[k] = (Z[4,2]*Iₛ₉[1]*status_SGs[1]+ Z[4,3]*Iₛ₉[2]*status_SGs[2]+ Z[4,4]*Iₛ₉[3]*status_SGs[3]+
     Z[4,5]*Iₛ₉[4]*status_SGs[4]+ Z[4,27]*Iₛ₉[5]*status_SGs[5]+ Z[4,30]*Iₛ₉[6]*status_SGs[6]+
-    Z[4,1]*I_IBG*status_IBG[1]+ Z[4,23]*I_IBG*status_IBG[2]+ Z[4,26]*I_IBG*status_IBG[3])/Z[4,4]# calculate the SCC at fault bus F=4
+    Z[4,1]*I_IBG*status_IBG[1]+ Z[4,23]*I_IBG*status_IBG[2]+ Z[4,26]*I_IBG*status_IBG[3])/Z[4,4]   # calculate the SCC at fault bus F=4
 end
 
 return I_sc₄, matrix_ω
