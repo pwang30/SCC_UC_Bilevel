@@ -37,22 +37,22 @@ model_ot= Model()
 # @variable(model_ot, k_fc[1:3]>=0)  # buses of IBG are 1,23,26. F=4
 # @variable(model_ot, k_fm[1:15]>=0)  # pairs of SGs
 
-@variable(model_ot, k_fg[1:6])  # buses of SGs are 2,3,4,5,27,30. F=4
-@variable(model_ot, k_fc[1:3])  # buses of IBG are 1,23,26. F=4
-@variable(model_ot, k_fm[1:15])  # pairs of SGs
+@variable(model_ot, k_fg[1:6]>=0)  # buses of SGs are 2,3,4,5,27,30. F=4
+@variable(model_ot, k_fc[1:3]>=0)  # buses of IBG are 1,23,26. F=4
+@variable(model_ot, k_fm[1:15]>=0)  # pairs of SGs
 
 for i in 1:size(matrix_ω_Ω1,1)
-@constraint(model_ot, sum(k_fg.* matrix_ω_Ω1[i,1:6])+ sum(k_fc.* matrix_ω_Ω1[i,7:9])+ sum(k_fm.* matrix_ω_Ω1[i,10:24]) <=Iₗᵢₘ ) 
+    @constraint(model_ot, sum(k_fg.* matrix_ω_Ω1[i,1:6])+ sum(k_fc.* matrix_ω_Ω1[i,7:9])+ sum(k_fm.* matrix_ω_Ω1[i,10:24]) <=Iₗᵢₘ ) 
 end
 
 for i in 1:size(matrix_ω_Ω3,1)
-@constraint(model_ot, sum(k_fg.* matrix_ω_Ω3[i,1:6])+ sum(k_fc.* matrix_ω_Ω3[i,7:9])+ sum(k_fm.* matrix_ω_Ω3[i,10:24]) >=Iₗᵢₘ ) 
+    @constraint(model_ot, sum(k_fg.* matrix_ω_Ω3[i,1:6])+ sum(k_fc.* matrix_ω_Ω3[i,7:9])+ sum(k_fm.* matrix_ω_Ω3[i,10:24]) >=Iₗᵢₘ ) 
 end
 
 
 @variable(model_ot, penalty_one_time_item[1:size(matrix_ω_Ω2,1)])
 for i in 1:size(matrix_ω_Ω2,1)
-    penalty_one_time_item[i]==I_sc₄_Ω2[i]- (sum(k_fg.* matrix_ω_Ω2[i,1:6])+ sum(k_fc.* matrix_ω_Ω2[i,7:9])+ sum(k_fm.* matrix_ω_Ω2[i,10:24]))
+    @constraint(model_ot, penalty_one_time_item[i]==I_sc₄_Ω2[i]- (sum(k_fg.* matrix_ω_Ω2[i,1:6])+ sum(k_fc.* matrix_ω_Ω2[i,7:9])+ sum(k_fm.* matrix_ω_Ω2[i,10:24])))
 end
 
 
