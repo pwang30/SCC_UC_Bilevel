@@ -54,7 +54,7 @@ for k in 1:size(SGpara, 1)
 end
 
 v=0.05
-I_sc₄, matrix_ω = dataset_gene()  # data set generation
+I_sc_all, matrix_ω = dataset_gene()  # data set generation
 k_Fg, k_Fc, k_Fm, obj= offline_trainning(I_sc₄, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
 
 #-----------------------------------Define Parameters for Optimization
