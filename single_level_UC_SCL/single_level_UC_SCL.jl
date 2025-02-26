@@ -5,74 +5,52 @@
 # 03.Dec.2024
 
 import Pkg 
-using JuMP,Gurobi, CSV,DataFrames,LinearAlgebra, XLSX, IterTools  
+using JuMP,Gurobi, CSV,DataFrames,LinearAlgebra, XLSX, IterTools,MAT # (here we choose Gurobi as it can solve the product of binary and continuous variables, we don't need to linearlize the nonlinear terms manually)
+
+#----------------------------------IEEE-30 Bus System Data Introduction----------------------------------
+df = DataFrame(CSV.File("/Users/ME2/Desktop/scl_ieee30/Loadcurves.csv"))        
+loadcurve=df[:,:]  
+df = DataFrame(CSV.File( "/Users/ME2/Desktop/scl_ieee30/Windcurves.csv") ) 
+windcurves=df[:,:]
 
 include("dataset_gene.jl")
 include("offline_trainning.jl")
 
-#----------------------------------IEEE-30 Bus System Data Introduction----------------------------------
-df = DataFrame(CSV.File("/Users/kl/Desktop/single_level_UC_SCL/Loadcurves.csv"))        
-loadcurve=df[:,:]  
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/Windcurves.csv") ) 
-windcurves=df[:,:]
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/SGpara.csv") ) 
-SGpara=df[:,:]
-df = DataFrame(CSV.File( "/Users/kl/Desktop/single_level_UC_SCL/Linespara.csv" )) 
-linepara=df[:,:]
-
-
-
 #-----------------------------------Define Parameters for Calculating SCC
-branch_num= size(linepara, 1)       # number of branches
-numnodes=30                         # number of nodes
-Yₗᵢₙₑ= zeros(numnodes, numnodes)     # define admittance matrix of the transmission lines
-Yₛ₉ = zeros(numnodes, numnodes)      # define admittance matrix of the SGs
+IBG₁=Vector(windcurves[1, 2:end])
+IBG₂₃=Vector(windcurves[2, 2:end])
+IBG₂₆=Vector(windcurves[3, 2:end])
 
-for k in 1:branch_num               #  calculate the admittance matrix of the transmission lines
-    i = linepara[k, 1]                  # bus from
-    j = linepara[k, 2]                   # bus to
-    Yₗᵢₙₑ[i, j] = -1/linepara[k, 4]*2        # off-diagonal elements
-    Yₗᵢₙₑ[j, i] = Yₗᵢₙₑ[i, j]                # symmetry
-end
-for k in 1:numnodes
-    Yₗᵢₙₑ[k, k] = -sum(Yₗᵢₙₑ[k, :])           # diagonal elements 
-end  
-
-for k in 1:size(SGpara, 1)                     # calculate the admittance matrix of the SGs
-    i = SGpara[k, 1]                         # bus from
-    Yₛ₉[i, i] = 1/SGpara[k, 2]/3                # diagonal elements 
-end 
-
-I_IBG=1  # SCC (p.u): Iₛ₉=Eₛ₉/X_dg  & I_IBG (pre-defined)
-Iₗᵢₘ=5    # SCC limit
+I_IBG=1  # (pre-defined)
+Iₗᵢₘ= 6     # SCC limit
 β=0.95
-Eₛ₉=1
-Eₛ₉=β*Eₛ₉
-Iₛ₉=zeros(1,size(SGpara, 1))
-for k in 1:size(SGpara, 1)
-    Iₛ₉[1,k]=Eₛ₉/SGpara[k, 2]/3
-end
+v=1
 
-v=0.05
-I_scc_all, matrix_ω = dataset_gene()  # data set generation
-K_g, K_c, K_m, Obj_total= offline_trainning(I_scc_all, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
+I_scc_all, matrix_ω = dataset_gene(I_IBG, β)  # data set generation
+# matwrite("C:/Users/ME2/Desktop/scl_ieee30/I_scc_all.mat", Dict("I_scc_all" => I_scc_all))
+
+
+I_scc_all=I_scc_all[2:end, :]                  # delete the first row as the first row is not realistic
+matrix_ω=matrix_ω[2:end, :]
+
+K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_scc_all, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
+
 
 #-----------------------------------Define Parameters for Optimization
 Pˢᴳₘₐₓ=[26 22 18 20 23 18]
 Pˢᴳₘᵢₙ=[10 8 4 6 10 5]
 Rₘₐₓ=Pˢᴳₘᵢₙ/5+3*ones(1,6)
 
-Kᵁ=[3.25,2.72,1.43,2.03,  3.31,2.11]
-Kᴰ=[0.285,0.201,0.153,0.201,  0.312,0.189]
-Cᵍᵐ=[0.9,0.6,0.5,0.7,  0.8,0.6]
-Cⁿˡ=[1.2,1,0.8,1.1,  1.1,0.9]
+Kᵁ=[3.25,2.72,1.43,2.03,  3.31,2.11]*10000
+Kᴰ=[0.285,0.201,0.153,0.201,  0.312,0.189]*10000
+Cᵍᵐ=[0.9,0.6,0.5,0.7,  0.8,0.6]*1000 
+Cⁿˡ=[1.2,1,0.8,1.1,  1.1,0.9]*1000
 T=24
 
 
      
 #-----------------------------------Define Model
 model= Model()
-
 
 #-------Define Variales
 @variable(model, Pˢᴳ²[1:T])                # generation of SG in bus 2
@@ -106,9 +84,9 @@ model= Model()
 @variable(model, Cᵁ³⁰[1:T])                 # startup costs for SG in bus 30
 @variable(model, Cᴰ³⁰[1:T])                 # shutdown costs for SG in bus 30
 
-@variable(model, α₁[1:T])                   # percentage of IBG penetration  
-@variable(model, α₂₃[1:T])
-@variable(model, α₂₆[1:T])
+@variable(model, α₁[1:T]>=0)                   # percentage of IBG penetration  
+@variable(model, α₂₃[1:T]>=0)
+@variable(model, α₂₆[1:T]>=0)
 
 #-------Define Constraints
 Pᴰ=zeros(1,T)
@@ -116,25 +94,24 @@ for t in 1:T
     Pᴰ[t]=Pᴰ[t]+sum(loadcurve[:,t+2])
 end
 
-@constraint(model, Pˢᴳ²+Pˢᴳ³+Pˢᴳ⁴+Pˢᴳ⁵+Pˢᴳ²⁷+Pˢᴳ³⁰+Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶==Pᴰ')     # power balance              
+@constraint(model, Pˢᴳ²+Pˢᴳ³+Pˢᴳ⁴+Pˢᴳ⁵+Pˢᴳ²⁷+Pˢᴳ³⁰+Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶== 0.25.*Pᴰ')     # power balance     0.4.*         
 
-@constraint(model, Pᴵᴮᴳ¹ .<= Vector(windcurves[1, 2:end]))        # wind power limit
+@constraint(model, Pᴵᴮᴳ¹ <= α₁.*IBG₁*5)        # wind power limit
 @constraint(model, Pᴵᴮᴳ¹>=0)
-@constraint(model, Pᴵᴮᴳ²³.<= Vector(windcurves[2,2:end]))       
+@constraint(model, Pᴵᴮᴳ²³<= α₁.*IBG₂₃*5)       
 @constraint(model, Pᴵᴮᴳ²³>=0)
-@constraint(model, Pᴵᴮᴳ²⁶.<=Vector(windcurves[3,2:end]))       
+@constraint(model, Pᴵᴮᴳ²⁶<= α₁.*IBG₂₆*5)       
 @constraint(model, Pᴵᴮᴳ²⁶>=0)
 
-@constraint(model, α₁.<=1)                   # IBG online capacity limit
-@constraint(model, α₁>=0)
-@constraint(model, α₂₃.<=1)                   
-@constraint(model, α₂₃>=0)
-@constraint(model, α₂₆.<=1)                   
-@constraint(model, α₂₆>=0)
+@constraint(model, α₁ .<= 1)        # wind power limit
+@constraint(model, α₂₃ .<= 1)       
+@constraint(model, α₂₆ .<= 1)       
 
-@constraint(model, α₁.*Pᴰ'==Pᴵᴮᴳ¹)
-@constraint(model, α₂₃.*Pᴰ'==Pᴵᴮᴳ²³)
-@constraint(model, α₂₆.*Pᴰ'==Pᴵᴮᴳ²⁶)
+
+# @constraint(model, α₁.*IBG₁==Pᴵᴮᴳ¹)                   # IBG online capacity limit
+# @constraint(model, α₂₃.*IBG₂₃==Pᴵᴮᴳ²³)                   
+# @constraint(model, α₂₆.*IBG₂₆==Pᴵᴮᴳ²⁶)                   
+
 
 @constraint(model, Pˢᴳ².<=yˢᴳ²*Pˢᴳₘₐₓ[1])       # bounds for the output of SGs
 @constraint(model, yˢᴳ²*Pˢᴳₘᵢₙ[1].<=Pˢᴳ²)
@@ -192,39 +169,17 @@ for t in 1:T-1       # bounds for the ramp of SGs
     @constraint(model, -Rₘₐₓ[6]<=Pˢᴳ³⁰[t+1]-Pˢᴳ³⁰[t])             
 end
          
-@variable(model, Z[1:T,  1:numnodes,  1:numnodes])  # Define the dynamic reactance matrix with time
-@variable(model, Y_total[1:T, 1:numnodes, 1:numnodes])  # Define the dynamic admittance matrix with time
-
-@variable(model, Yₛ₉_binary[1:T,  1:numnodes,  1:numnodes])
-for t in 1:T
-@constraint(model, Yₛ₉_binary[t,SGpara[1, 1],SGpara[1, 1]]== yˢᴳ²[t])
-end
-for t in 1:T
-    @constraint(model, Yₛ₉_binary[t,SGpara[2, 1],SGpara[2, 1]]== yˢᴳ³[t])
-end
-for t in 1:T
-    @constraint(model, Yₛ₉_binary[t,SGpara[3, 1],SGpara[3, 1]]== yˢᴳ⁴[t])
-end
-for t in 1:T
-    @constraint(model, Yₛ₉_binary[t,SGpara[4, 1],SGpara[4, 1]]== yˢᴳ⁵[t])
-end
-for t in 1:T
-    @constraint(model, Yₛ₉_binary[t,SGpara[5, 1],SGpara[5, 1]]== yˢᴳ²⁷[t])
-end
-for t in 1:T
-    @constraint(model, Yₛ₉_binary[t,SGpara[6, 1],SGpara[6, 1]]== yˢᴳ³⁰[t])
-end
-
-for t in 1:T
-    @constraint(model, Y_total[t,:,:] .== Yₗᵢₙₑ + Yₛ₉ .* Yₛ₉_binary[t,:,:] )
-    @constraint(model, Z[t,:,:] * Y_total[t,:,:] .== Matrix(I, numnodes, numnodes))  # Matrix Inversion Constraints
-end
-
-
-for t in 1:T   # bounds for the SCC of SG in bus 13
-    @constraint(model, Z[t,13,2]*Iₛ₉[1]*yˢᴳ²[t]+ Z[t,13,3]*Iₛ₉[2]*yˢᴳ³[t]+ Z[t,13,4]*Iₛ₉[3]*yˢᴳ⁴[t]+ Z[t,13,5]*Iₛ₉[4]*yˢᴳ⁵[t]+
-    Z[t,1,27]*Iₛ₉[5]*yˢᴳ²⁷[t]+ Z[t,1,30]*Iₛ₉[6]*yˢᴳ³⁰[t]+ 
-    Z[t,13,1]*I_IBG*α₁[t]+ Z[t,13,23]*I_IBG*α₂₃[t]+ Z[t,13,26]*I_IBG*α₂₆[t]>=Iₗᵢₘ*Z[t,13,13])
+for k in 1:size(K_g,2)
+    for t in 1:T   # bounds for the SCC of SGs
+        @constraint(model, K_g[1,k]*yˢᴳ²[t]+ K_g[2,k]*yˢᴳ³[t]+ K_g[3,k]*yˢᴳ⁴[t]+ K_g[4,k]*yˢᴳ⁵[t]+K_g[5,k]*yˢᴳ²⁷[t]+ K_g[6,k]*yˢᴳ³⁰[t]+ 
+        K_c[1,k]*α₁[t]+ K_c[2,k]*α₁[t]+ K_c[3,k]*α₁[t]+
+        K_m[1,k]*yˢᴳ²[t]*yˢᴳ³[t]+ K_m[2,k]*yˢᴳ²[t]*yˢᴳ⁴[t]+ K_m[3,k]*yˢᴳ²[t]*yˢᴳ⁵[t]+ K_m[4,k]*yˢᴳ²[t]*yˢᴳ²⁷[t]+ K_m[5,k]*yˢᴳ²[t]*yˢᴳ³⁰[t]+      
+        K_m[6,k]*yˢᴳ³[t]*yˢᴳ⁴[t]+ K_m[7,k]*yˢᴳ³[t]*yˢᴳ⁵[t]+ K_m[8,k]*yˢᴳ³[t]*yˢᴳ²⁷[t]+ K_m[9,k]*yˢᴳ³[t]*yˢᴳ³⁰[t]+
+        K_m[10,k]*yˢᴳ⁴[t]*yˢᴳ⁵[t]+ K_m[11,k]*yˢᴳ⁴[t]*yˢᴳ²⁷[t]+ K_m[12,k]*yˢᴳ⁴[t]*yˢᴳ³⁰[t]+
+        K_m[13,k]*yˢᴳ⁵[t]*yˢᴳ²⁷[t]+ K_m[14,k]*yˢᴳ⁵[t]*yˢᴳ³⁰[t]+
+        K_m[15,k]*yˢᴳ²⁷[t]*yˢᴳ³⁰[t] 
+        >=Iₗᵢₘ)
+    end
 end
 
 #-------Define Objective Functions
@@ -244,7 +199,16 @@ optimize!(model)
 
 
 
-# yˢᴳ²=JuMP.value.(yˢᴳ²)
-# α₂₆=JuMP.value.(α₂₆)
+ yˢᴳ²=JuMP.value.(yˢᴳ²)
+ yˢᴳ³=JuMP.value.(yˢᴳ³)
+ yˢᴳ⁴=JuMP.value.(yˢᴳ⁴)
+ yˢᴳ⁵=JuMP.value.(yˢᴳ⁵)
+ yˢᴳ²⁷=JuMP.value.(yˢᴳ²⁷)
+ yˢᴳ³⁰=JuMP.value.(yˢᴳ³⁰)
+
+ α₁=JuMP.value.(α₁)
+ α₂₃=JuMP.value.(α₂₃)
+ α₂₆=JuMP.value.(α₂₆)
+  α₂₆=JuMP.value.(α₂₆)
 #Z=JuMP.value.(Z)
 #println(value.( Z[1,3,1]))
