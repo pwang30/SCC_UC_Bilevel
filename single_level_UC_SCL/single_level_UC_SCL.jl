@@ -250,16 +250,19 @@ end
 
 
 
+@variable(model, I_scc[1:size(K_g,2), 1:T])
+
 for k in 1:size(K_g,2)       # bounds for the SCC of SGs
     for t in 1:T   
-        @constraint(model, K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
-                           K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
-                           K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
-                           K_g[7,k]*yˢᴳ⁵_1[t]+ K_g[8,k]*yˢᴳ⁵_2[t]+
-                           K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
-                           K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
-        
-                           K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1]
+        @constraint(model, I_scc[k,t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
+        K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
+        K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
+        K_g[7,k]*yˢᴳ⁵_1[t]+ K_g[8,k]*yˢᴳ⁵_2[t]+
+        K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
+        K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
+        K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1])
+
+        @constraint(model, I_scc[k,t]
 
         # K_m[1,k]*yˢᴳ²[t]*yˢᴳ³[t]+ K_m[2,k]*yˢᴳ²[t]*yˢᴳ⁴[t]+ K_m[3,k]*yˢᴳ²[t]*yˢᴳ⁵[t]+ K_m[4,k]*yˢᴳ²[t]*yˢᴳ²⁷[t]+ K_m[5,k]*yˢᴳ²[t]*yˢᴳ³⁰[t]+      
         # K_m[6,k]*yˢᴳ³[t]*yˢᴳ⁴[t]+ K_m[7,k]*yˢᴳ³[t]*yˢᴳ⁵[t]+ K_m[8,k]*yˢᴳ³[t]*yˢᴳ²⁷[t]+ K_m[9,k]*yˢᴳ³[t]*yˢᴳ³⁰[t]+
