@@ -25,20 +25,17 @@ IBG₂₆=hcat(IBG₂₆)*10^8*3
 
 
 I_IBG=1    # pre-defined SCC contribution from IBG
-Iₗᵢₘ= 10     # SCC limit
+Iₗᵢₘ= 3      # SCC limit
 β=0.95
 v=1
 
-I_SCC_all_buses_scenarios, matrix_ω = dataset_gene(I_IBG, β)  # data set generation
-# matwrite("C:/Users/ME2/Desktop/scl_ieee30/I_scc_all.mat", Dict("I_scc_all" => I_scc_all))   # save as format of .mat in Matlab
-
+I_SCC_all_buses_scenarios, matrix_ω = dataset_gene(I_IBG, β)                      # data set generation
 K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_SCC_all_buses_scenarios, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
-
-
 
 #-----------------------------------Define Parameters for Optimization
 Load_total=[18.42,17.95,18.29,18.51,18.13,17.88,19.46,21.97,23.17,23.87,
-23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^9
+23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^9*0.7
+
 Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^9     # SGs, buses:2,3,4,5,27,30
 Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^9
 Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^9
@@ -70,18 +67,19 @@ model= Model()
 @variable(model, Pˢᴳ³⁰_1[1:T])                
 @variable(model, Pˢᴳ³⁰_2[1:T])  
 
-@variable(model, yˢᴳ²_1[1:T],Bin)   # status of SGs
-@variable(model, yˢᴳ²_2[1:T],Bin)          
-@variable(model, yˢᴳ³_1[1:T],Bin)  
-@variable(model, yˢᴳ³_2[1:T],Bin)          
-@variable(model, yˢᴳ⁴_1[1:T],Bin)      
-@variable(model, yˢᴳ⁴_2[1:T],Bin)      
-@variable(model, yˢᴳ⁵_1[1:T],Bin)      
-@variable(model, yˢᴳ⁵_2[1:T],Bin)      
-@variable(model, yˢᴳ²⁷_1[1:T],Bin)  
-@variable(model, yˢᴳ²⁷_2[1:T],Bin)          
-@variable(model, yˢᴳ³⁰_1[1:T],Bin)   
-@variable(model, yˢᴳ³⁰_2[1:T],Bin)          
+@variable(model, yˢᴳ²_1[1:T]>=0)   # status of SGs, here they are relaxed to be continuous ones [0,1]
+@variable(model, yˢᴳ²_2[1:T]>=0)          
+@variable(model, yˢᴳ³_1[1:T]>=0)  
+@variable(model, yˢᴳ³_2[1:T]>=0)          
+@variable(model, yˢᴳ⁴_1[1:T]>=0)      
+@variable(model, yˢᴳ⁴_2[1:T]>=0)      
+@variable(model, yˢᴳ⁵_1[1:T]>=0)      
+@variable(model, yˢᴳ⁵_2[1:T]>=0)      
+@variable(model, yˢᴳ²⁷_1[1:T]>=0)  
+@variable(model, yˢᴳ²⁷_2[1:T]>=0)          
+@variable(model, yˢᴳ³⁰_1[1:T]>=0)   
+@variable(model, yˢᴳ³⁰_2[1:T]>=0)          
+
 
 @variable(model, Pᴵᴮᴳ¹[1:T])               # generation of IBG (WT) 
 @variable(model, Pᴵᴮᴳ²³[1:T])              
@@ -112,13 +110,32 @@ model= Model()
 @variable(model, Cᴰ³⁰_1[1:T]>=0)    
 @variable(model, Cᴰ³⁰_2[1:T]>=0)            
 
-@variable(model, α₁[1:1])                   # percentage of IBGs' online capacity  
-@variable(model, α₂₃[1:1])
-@variable(model, α₂₆[1:1])
-
+@variable(model, α₁>=0)                   # percentage of IBGs' online capacity  
+@variable(model, α₂₃>=0)
+@variable(model, α₂₆>=0)
+#α₁=0.1
+#α₂₃=0.2
+#α₂₆=0.3
 
 
 #-------Define Constraints
+
+
+@constraint(model, yˢᴳ²_1[1:T].<=1)   # status of SGs, here they are relaxed to be continuous ones [0,1]
+@constraint(model, yˢᴳ²_2[1:T].<=1)          
+@constraint(model, yˢᴳ³_1[1:T].<=1)  
+@constraint(model, yˢᴳ³_2[1:T].<=1)          
+@constraint(model, yˢᴳ⁴_1[1:T].<=1)      
+@constraint(model, yˢᴳ⁴_2[1:T].<=1)      
+@constraint(model, yˢᴳ⁵_1[1:T].<=1)      
+@constraint(model, yˢᴳ⁵_2[1:T].<=1)      
+@constraint(model, yˢᴳ²⁷_1[1:T].<=1)  
+@constraint(model, yˢᴳ²⁷_2[1:T].<=1)          
+@constraint(model, yˢᴳ³⁰_1[1:T].<=1)   
+@constraint(model, yˢᴳ³⁰_2[1:T].<=1) 
+
+
+
 @constraint(model, Pˢᴳ²_1+Pˢᴳ²_2+Pˢᴳ³_1+Pˢᴳ³_2+Pˢᴳ⁴_1+Pˢᴳ⁴_2+Pˢᴳ⁵_1+Pˢᴳ⁵_2+Pˢᴳ²⁷_1+Pˢᴳ²⁷_2+Pˢᴳ³⁰_1+Pˢᴳ³⁰_2+
                     Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶==Load_total)     # power balance              
 
@@ -129,12 +146,9 @@ model= Model()
 @constraint(model, Pᴵᴮᴳ²⁶.<= IBG₂₆*α₂₆)       
 @constraint(model, Pᴵᴮᴳ²⁶>=0)
 
-@constraint(model, α₁.<=1)                   # IBG online capacity limit
-@constraint(model, α₁>=0)
-@constraint(model, α₂₃.<=1)                   
-@constraint(model, α₂₃>=0)
-@constraint(model, α₂₆.<=1)                   
-@constraint(model, α₂₆>=0)
+@constraint(model, α₁<=1)                   # IBG online capacity limit
+@constraint(model, α₂₃<=1)                   
+@constraint(model, α₂₆<=1)                   
 
 
 @constraint(model, Pˢᴳ²_1.<=yˢᴳ²_1*Pˢᴳₘₐₓ[1])       # bounds for the output of SGs
@@ -248,10 +262,11 @@ for t in 1:T-1          # bounds for the ramp of SGs
 end
          
 
+constraints = Dict()
+@variable(model, I_scc[1:size(K_g,2), 1:T])
 
-
-for k in 1:size(K_g,2)       # bounds for the SCC of SGs
-    for t in 1:T   
+for k in 1:size(K_g,2)       # bounds for the SCC 
+    for t in 1:T  
         @constraint(model, I_scc[k,t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
         K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
         K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
@@ -259,51 +274,21 @@ for k in 1:size(K_g,2)       # bounds for the SCC of SGs
         K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
         K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
 
-        K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1]+
-        
-        K_m[1,k]*yˢᴳ²_1[t]*yˢᴳ²_2[t]+ K_m[2,k]*yˢᴳ²_1[t]*yˢᴳ³_1[t]+ K_m[3,k]*yˢᴳ²_1[t]*yˢᴳ³_2[t]+ K_m[4,k]*yˢᴳ²_1[t]*yˢᴳ⁴_1[t]+
-K_m[5,k]*yˢᴳ²_1[t]*yˢᴳ⁴_2[t]+ K_m[6,k]*yˢᴳ²_1[t]*yˢᴳ⁵_1[t]+ K_m[7,k]*yˢᴳ²_1[t]*yˢᴳ⁵_2[t]+ K_m[8,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_1[t]+
-K_m[9,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_2[t]+ K_m[10,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_1[t]+ K_m[11,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_2[t]+
+        K_c[1,k]*α₁+ K_c[2,k]*α₂₃+ K_c[3,k]*α₂₆)
 
-K_m[12,k]*yˢᴳ²_2[t]*yˢᴳ³_1[t]+ K_m[13,k]*yˢᴳ²_2[t]*yˢᴳ³_2[t]+ K_m[14,k]*yˢᴳ²_2[t]*yˢᴳ⁴_1[t]+
-K_m[15,k]*yˢᴳ²_2[t]*yˢᴳ⁴_2[t]+ K_m[16,k]*yˢᴳ²_2[t]*yˢᴳ⁵_1[t]+ K_m[17,k]*yˢᴳ²_2[t]*yˢᴳ⁵_2[t]+ K_m[18,k]*yˢᴳ²_2[t]*yˢᴳ²⁷_1[t]+
-K_m[19,k]*yˢᴳ²_2[t]*yˢᴳ²⁷_2[t]+ K_m[20,k]*yˢᴳ²_2[t]*yˢᴳ³⁰_1[t]+ K_m[21,k]*yˢᴳ²_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[22,k]*yˢᴳ³_1[t]*yˢᴳ³_2[t]+ K_m[23,k]*yˢᴳ³_1[t]*yˢᴳ⁴_1[t]+
-K_m[24,k]*yˢᴳ³_1[t]*yˢᴳ⁴_2[t]+ K_m[25,k]*yˢᴳ³_1[t]*yˢᴳ⁵_1[t]+ K_m[26,k]*yˢᴳ³_1[t]*yˢᴳ⁵_2[t]+ K_m[27,k]*yˢᴳ³_1[t]*yˢᴳ²⁷_1[t]+
-K_m[28,k]*yˢᴳ³_1[t]*yˢᴳ²⁷_2[t]+ K_m[29,k]*yˢᴳ³_1[t]*yˢᴳ³⁰_1[t]+ K_m[30,k]*yˢᴳ³_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[31,k]*yˢᴳ³_2[t]*yˢᴳ⁴_1[t]+
-K_m[32,k]*yˢᴳ³_2[t]*yˢᴳ⁴_2[t]+ K_m[33,k]*yˢᴳ³_2[t]*yˢᴳ⁵_1[t]+ K_m[34,k]*yˢᴳ³_2[t]*yˢᴳ⁵_2[t]+ K_m[35,k]*yˢᴳ³_2[t]*yˢᴳ²⁷_1[t]+
-K_m[36,k]*yˢᴳ³_2[t]*yˢᴳ²⁷_2[t]+ K_m[37,k]*yˢᴳ³_2[t]*yˢᴳ³⁰_1[t]+ K_m[38,k]*yˢᴳ³_2[t]*yˢᴳ³⁰_2[t]+
-
-
-K_m[39,k]*yˢᴳ⁴_1[t]*yˢᴳ⁴_2[t]+ K_m[40,k]*yˢᴳ⁴_1[t]*yˢᴳ⁵_1[t]+ K_m[41,k]*yˢᴳ⁴_1[t]*yˢᴳ⁵_2[t]+ K_m[42,k]*yˢᴳ⁴_1[t]*yˢᴳ²⁷_1[t]+
-K_m[43,k]*yˢᴳ⁴_1[t]*yˢᴳ²⁷_2[t]+ K_m[44,k]*yˢᴳ⁴_1[t]*yˢᴳ³⁰_1[t]+ K_m[45,k]*yˢᴳ⁴_1[t]*yˢᴳ³⁰_2[t]+
-
-
-K_m[46,k]*yˢᴳ⁴_2[t]*yˢᴳ⁵_1[t]+ K_m[47,k]*yˢᴳ⁴_2[t]*yˢᴳ⁵_2[t]+ K_m[48,k]*yˢᴳ⁴_2[t]*yˢᴳ²⁷_1[t]+
-K_m[49,k]*yˢᴳ⁴_2[t]*yˢᴳ²⁷_2[t]+ K_m[50,k]*yˢᴳ⁴_2[t]*yˢᴳ³⁰_1[t]+ K_m[51,k]*yˢᴳ⁴_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[52,k]*yˢᴳ⁵_1[t]*yˢᴳ⁵_2[t]+ K_m[53,k]*yˢᴳ⁵_1[t]*yˢᴳ²⁷_1[t]+
-K_m[54,k]*yˢᴳ⁵_1[t]*yˢᴳ²⁷_2[t]+ K_m[55,k]*yˢᴳ⁵_1[t]*yˢᴳ³⁰_1[t]+ K_m[56,k]*yˢᴳ⁵_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[57,k]*yˢᴳ⁵_2[t]*yˢᴳ²⁷_1[t]+
-K_m[58,k]*yˢᴳ⁵_2[t]*yˢᴳ²⁷_2[t]+ K_m[59,k]*yˢᴳ⁵_2[t]*yˢᴳ³⁰_1[t]+ K_m[60,k]*yˢᴳ⁵_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[61,k]*yˢᴳ²⁷_1[t]*yˢᴳ²⁷_2[t]+ K_m[62,k]*yˢᴳ²⁷_1[t]*yˢᴳ³⁰_1[t]+ K_m[63,k]*yˢᴳ²⁷_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[64,k]*yˢᴳ²⁷_2[t]*yˢᴳ³⁰_1[t]+ K_m[65,k]*yˢᴳ²⁷_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[66,k]*yˢᴳ³⁰_1[t]*yˢᴳ³⁰_2[t])
-
-        
-
-        @constraint(model, I_scc[k,t]
-
-        >=Iₗᵢₘ)
+        if k==23
+            continue
+        end
+        @constraint(model, I_scc[k,t]-Iₗᵢₘ >=0)
     end
 end
+
+for t in 1:24
+    constraints[t] = @constraint(model, I_scc[23, t] -Iₗᵢₘ >= 0)
+end
+
+
+
 
 #-------Define Objective Functions
 No_load_cost=sum(Cⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))+sum(Cⁿˡ[2].*(yˢᴳ³_1+yˢᴳ³_2))+sum(Cⁿˡ[3].*(yˢᴳ⁴_1+yˢᴳ⁴_2))+sum(Cⁿˡ[4].*(yˢᴳ⁵_1+yˢᴳ⁵_2))+sum(Cⁿˡ[5].*(yˢᴳ²⁷_1+yˢᴳ²⁷_2))+sum(Cⁿˡ[6].*(yˢᴳ³⁰_1+yˢᴳ³⁰_2))    
@@ -319,13 +304,25 @@ set_optimizer(model , Gurobi.Optimizer)
 # set_time_limit_sec(model, 700.0)
 optimize!(model)
 
+
+for i in 1:T
+     println("对偶变量 λ$i (constraint_$i): ", dual(constraints[i]))
+ end
+
+
 #-----------------------------------Calculate SCC at each bus
 
 
 
 
 
- # yˢᴳ²=JuMP.value.(yˢᴳ²)
+# I_scc=JuMP.value.(I_scc)
+# min_value, min_index= findmin(I_scc)
+
+# λ_scc=JuMP.value.(λ_scc)
+# max_value, max_index= findmax(λ_scc)
+
+# α₂₆=JuMP.value.(α₂₆)
  # yˢᴳ³=JuMP.value.(yˢᴳ³)
  # yˢᴳ⁴=JuMP.value.(yˢᴳ⁴)
  # yˢᴳ⁵=JuMP.value.(yˢᴳ⁵)
