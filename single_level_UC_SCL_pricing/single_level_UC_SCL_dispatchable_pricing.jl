@@ -25,16 +25,59 @@ include("admittance_matrix_calculation.jl")
 IBG₁=Vector(windcurves[1, 2:end])      # total capacity of IBRs, here they are wind turbines 
 IBG₂₃=Vector(windcurves[2, 2:end])
 IBG₂₆=Vector(windcurves[3, 2:end])
-IBG₁=hcat(IBG₁)*10^8*3                 # the coffecients here can be modified
+IBG₁=hcat(IBG₁)*10^8*3               # the coffecients here can be modified
 IBG₂₃=hcat(IBG₂₃)*10^8*3
 IBG₂₆=hcat(IBG₂₆)*10^8*3
 
+#plot(Load_total)
+#plot!(IBG₁+IBG₂₃+IBG₂₆)
+
 I_IBG=1     # pre-defined SCC contribution from IBG
-Iₗᵢₘ= 7      # SCC limit/SCL
+Iₗᵢₘ= 6      # SCC limit/SCL
 β=0.95      # fluctuation coffecient of nominal voltage 
 v=1         # nominal voltage 
 
 I_SCC_all_buses_scenarios, matrix_ω = dataset_gene(I_IBG,β,v)   # data set generation
+
+
+# signal=ones(size(I_SCC_all_buses_scenarios,1),1)
+# for i in 1:size(I_SCC_all_buses_scenarios,1)
+  #   for j in 1:size(I_SCC_all_buses_scenarios,2)
+    #     if I_SCC_all_buses_scenarios[i,j]<Iₗᵢₘ
+      #       signal[i]=signal[i]*0
+        # end
+    # end
+# end
+
+# j=0
+# for i in 1:size(signal,1)
+  #   if signal[i]==1
+    #     j=j+1
+    # end
+# end
+
+
+#signal=[]
+# for i in 1:size(I_SCC_all_buses_scenarios,1)
+  #   for j in 1:size(I_SCC_all_buses_scenarios,2)
+    #     if I_SCC_all_buses_scenarios[i,j]<Iₗᵢₘ
+      #       signal[i]=signal[i]*0
+        # end
+    # end
+# end
+
+
+#for i in 1:size(I_SCC_all_buses_scenarios,1)
+    #if I_SCC_all_buses_scenarios[i,1]<Iₗᵢₘ
+       # push!(signal, i)
+   # end
+#end
+#signal = hcat(signal...)' 
+
+
+
+
+
 K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_SCC_all_buses_scenarios, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
 
 #-----------------------------------Define Parameters for Optimization----------------------------------
@@ -49,6 +92,8 @@ Kᵁ=[4000, 325, 142.5, 72, 55, 31]/5*10^3                  # startup cost
 Kᴰ=[800, 28.5, 18.5, 14.4, 12, 10]/5*10^3                 # shutdown cost
 Cᵍᵐ₁=[6.20, 32.10, 36.47, 64.28, 84.53, 97.36]/10^6       # marginal cost for SG1 in each SGs bus
 Cᵍᵐ₂=[7.07, 34.72, 38.49, 72.84, 93.60, 105.02]/10^6      # marginal cost for SG2 in each SGs bus
+# Cᵍᵐ₁=[6.20, 7.10, 9.47, 11.28, 18.53, 24.36]/10^6       # marginal cost for SG1 in each SGs bus
+# Cᵍᵐ₂=[7.07, 9.72, 10.49, 13.84, 20.60, 25.02]/10^6      # marginal cost for SG2 in each SGs bus
 Cⁿˡ=[18.431, 17.005, 13.755, 9.930, 9.900, 8.570]/5*10^3  # no-load cost for SGs in buses
 T=length(Load_total)
 
@@ -116,12 +161,12 @@ model= Model()
 @variable(model, Cᴰ³⁰_1[1:T]>=0)    
 @variable(model, Cᴰ³⁰_2[1:T]>=0)            
 
-#@variable(model, α₁>=0)                   # percentage of IBGs' online capacity  
-#@variable(model, α₂₃>=0)
-#@variable(model, α₂₆>=0)
-α₁=0.4
-α₂₃=0.3
-α₂₆=0.4
+@variable(model, α₁>=0)                   # percentage of IBGs' online capacity  
+@variable(model, α₂₃>=0)
+@variable(model, α₂₆>=0)
+#α₁=0.4
+#α₂₃=0.3
+#α₂₆=0.4
 
 
 #----------------------------------Define Constraints
@@ -148,9 +193,9 @@ model= Model()
 @constraint(model, Pᴵᴮᴳ²⁶.<= IBG₂₆*α₂₆)       
 @constraint(model, Pᴵᴮᴳ²⁶>=0)
 
-#@constraint(model, α₁<=1)                   # IBG online capacity limit
-#@constraint(model, α₂₃<=1)                   
-#@constraint(model, α₂₆<=1)                   
+@constraint(model, α₁<=1)                   # IBG online capacity limit
+@constraint(model, α₂₃<=1)                   
+@constraint(model, α₂₆<=1)                   
 
 
 @constraint(model, Pˢᴳ²_1.<=yˢᴳ²_1*Pˢᴳₘₐₓ[1])       # bounds for the output of SGs
@@ -353,35 +398,14 @@ plot!(shadow_prices_all_buses[:,30],label="bus 30",linestyle=:solid, marker=:cir
 
 
 #----------------------------------SCC payment from different sinks
-SGs_bus=[2 3 4 5 27 30]
-IBRs_bus=[23 26]
-payment=zeros(2,6)
+#SGs_bus=[2 3 4 5 27 30]
+#IBRs_bus=[23 26]
+#payment=zeros(2,6)
 
-
-payment[1,1]=sum(  (K_g[1,IBRs_bus[1]] +  K_g[2,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-payment[1,2]=sum(  (K_g[3,IBRs_bus[1]] +  K_g[4,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-payment[1,3]=sum(  (K_g[5,IBRs_bus[1]] +  K_g[6,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-payment[1,4]=sum(  (K_g[7,IBRs_bus[1]] +  K_g[8,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-payment[1,5]=sum(  (K_g[9,IBRs_bus[1]] +  K_g[10,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-payment[1,6]=sum(  (K_g[11,IBRs_bus[1]] +  K_g[12,IBRs_bus[1]]  )  / sum(K_g[:,IBRs_bus[1]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[1]])/T
-
-payment[2,1]=sum(  (K_g[1,IBRs_bus[2]] +  K_g[2,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-payment[2,2]=sum(  (K_g[3,IBRs_bus[2]] +  K_g[4,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-payment[2,3]=sum(  (K_g[5,IBRs_bus[2]] +  K_g[6,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-payment[2,4]=sum(  (K_g[7,IBRs_bus[2]] +  K_g[8,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-payment[2,5]=sum(  (K_g[9,IBRs_bus[2]] +  K_g[10,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-payment[2,6]=sum(  (K_g[11,IBRs_bus[2]] +  K_g[12,IBRs_bus[2]]  )  / sum(K_g[:,IBRs_bus[2]])   *   Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[2]])/T
-
-
-
-
-
-
-k=0
-for j in 1:2:size(K_g,1)-1
-    k=k+1
-    for i in 1: size(IBRs_bus,2)
-        payment[i,k]=sum(  (K_g[j,IBRs_bus[i]] +  K_g[j+1,IBRs_bus[i]] ) / sum(K_g[:,IBRs_bus[i]]) * Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[i]])/T
-    end
-
-end
+#k=0
+#for j in 1:2:size(K_g,1)-1
+    #k=k+1
+    #for i in 1: size(IBRs_bus,2)
+        #payment[i,k]=sum(  (K_g[j,IBRs_bus[i]] +  K_g[j+1,IBRs_bus[i]] ) / sum(K_g[:,IBRs_bus[i]]) * Iₗᵢₘ.*shadow_prices_all_buses[:,IBRs_bus[i]])/T
+    #end
+#end
