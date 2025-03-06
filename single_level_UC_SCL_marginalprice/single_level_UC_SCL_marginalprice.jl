@@ -1,7 +1,7 @@
 # Author:     Peng Wang     from Technical University of Madrid (UPM)
 # Supervisor: Luis Badesa   from Technical University of Madrid (UPM)
 # This program is the marginal unit price method for pricing SCC services in paper: "Pricing of Short Circuit Current in High IBR-Penetrated System".
-# Note:   SGs  buses:2,3,4,5,27,30    IBRs buses:1,23,26
+# Note:   SGs  buses:2,3,4,5,27,30    IBRs buses:1,23,26,     NO Shadow prices here
 # 05.Mar.2025
 
 import Pkg
@@ -36,29 +36,31 @@ v=1         # nominal voltage
 I_SCC_all_buses_scenarios, matrix_ω = dataset_gene(I_IBG,β,v)   # data set generation
 K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_SCC_all_buses_scenarios, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
 
-
-
-#-----------------------------------Define Parameters for Optimization
+#-----------------------------------Define Parameters for Optimization----------------------------------
 Load_total=[18.42,17.95,18.29,18.51,18.13,17.88,19.46,21.97,23.17,23.87,
 23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^9*0.7
-Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^9     # SGs, buses:2,3,4,5,27,30
-Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^9
-Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^9
 
-Kᵁ=[4000, 325, 142.5, 72, 55, 31]/5*10^3
-Kᴰ=[800, 28.5, 18.5, 14.4, 12, 10]/5*10^3
-Cᵍᵐ₁=[6.20, 32.10, 36.47, 64.28, 84.53, 97.36]/10^6
-Cᵍᵐ₂=[7.07, 34.72, 38.49, 72.84, 93.60, 105.02]/10^6
-Cⁿˡ=[18.431, 17.005, 13.755, 9.930, 9.900, 8.570]/5*10^3
+Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^9    # maximum output of SGs in corresponding bus 
+Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^9    # minimum output of SGs in corresponding bus 
+Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^9      # ramp rates
+
+Kᵁ=[4000, 325, 142.5, 72, 55, 31]/5*10^3                  # startup cost
+Kᴰ=[800, 28.5, 18.5, 14.4, 12, 10]/5*10^3                 # shutdown cost
+# Cᵍᵐ₁=[6.20, 32.10, 36.47, 64.28, 84.53, 97.36]/10^6       # marginal cost for SG₁ in each SGs bus
+# Cᵍᵐ₂=[7.07, 34.72, 38.49, 72.84, 93.60, 105.02]/10^6      # marginal cost for SG₂ in each SGs bus
+
+Cᵍᵐ₁=[6.20, 7.10, 8.47, 10.28, 17.53, 21.36]/10^6       # marginal cost for SG₁ in each SGs bus
+Cᵍᵐ₂=[7.07, 8.72, 9.49, 11.84, 19.60, 24.02]/10^6      # marginal cost for SG₂ in each SGs bus
+
+Cⁿˡ=[18.431, 17.005, 13.755, 9.930, 9.900, 8.570]/5*10^3  # no-load cost for SGs in buses
 T=length(Load_total)
 
 
      
-#-----------------------------------Define Model
+#---------------------------------------Define Model--------------------------------------------------------------------
 model= Model()
 
-
-#-------Define Variales
+#----------------------------------Define Variales
 @variable(model, Pˢᴳ²_1[1:T])     # generation of SG 
 @variable(model, Pˢᴳ²_2[1:T])   
 @variable(model, Pˢᴳ³_1[1:T])     
@@ -114,15 +116,15 @@ model= Model()
 @variable(model, Cᴰ³⁰_1[1:T]>=0)    
 @variable(model, Cᴰ³⁰_2[1:T]>=0)            
 
-# @variable(model, α₁[1:1])                   # percentage of IBGs' online capacity  
-# @variable(model, α₂₃[1:1])
-# @variable(model, α₂₆[1:1])
-α₁=0.2
-α₂₃=0.2
-α₂₆=0.1
+# @variable(model, α₁>=0)                   # percentage of IBGs' online capacity  
+# @variable(model, α₂₃>=0)
+# @variable(model, α₂₆>=0)
+α₁=0.4
+α₂₃=0.3
+α₂₆=0.4
 
 
-#-------Define Constraints
+#----------------------------------Define Constraints
 @constraint(model, Pˢᴳ²_1+Pˢᴳ²_2+Pˢᴳ³_1+Pˢᴳ³_2+Pˢᴳ⁴_1+Pˢᴳ⁴_2+Pˢᴳ⁵_1+Pˢᴳ⁵_2+Pˢᴳ²⁷_1+Pˢᴳ²⁷_2+Pˢᴳ³⁰_1+Pˢᴳ³⁰_2+
                     Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶==Load_total)     # power balance              
 
@@ -134,11 +136,8 @@ model= Model()
 @constraint(model, Pᴵᴮᴳ²⁶>=0)
 
 # @constraint(model, α₁.<=1)                   # IBG online capacity limit
-# @constraint(model, α₁>=0)
 # @constraint(model, α₂₃.<=1)                   
-# @constraint(model, α₂₃>=0)
 # @constraint(model, α₂₆.<=1)                   
-# @constraint(model, α₂₆>=0)
 
 
 @constraint(model, Pˢᴳ²_1.<=yˢᴳ²_1*Pˢᴳₘₐₓ[1])       # bounds for the output of SGs
@@ -252,23 +251,23 @@ for t in 1:T-1          # bounds for the ramp of SGs
 end
          
 
+@variable(model, I_scc[1:T])
 
-@variable(model, I_scc[1:size(K_g,2),1:T])
-for k in 1:size(K_g,2)       # bounds for the SCC of SGs
-    if k == 23
-        continue  # jump bus k
-    end
-    for t in 1:T   
-        @constraint(model, I_scc[k,t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
-        K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
-        K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
-        K_g[7,k]*yˢᴳ⁵_1[t]+ K_g[8,k]*yˢᴳ⁵_2[t]+
-        K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
-        K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
 
-        K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1]+
-        
-        K_m[1,k]*yˢᴳ²_1[t]*yˢᴳ²_2[t]+ K_m[2,k]*yˢᴳ²_1[t]*yˢᴳ³_1[t]+ K_m[3,k]*yˢᴳ²_1[t]*yˢᴳ³_2[t]+ K_m[4,k]*yˢᴳ²_1[t]*yˢᴳ⁴_1[t]+
+k=1   # F=1  #SCC constraint with no certain SGs contributions (now it's SGs in bus 3)
+
+
+for t in 1:T   
+    @constraint(model, I_scc[t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
+    K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
+    K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
+    K_g[7,k]*yˢᴳ⁵_1[t]+ K_g[8,k]*yˢᴳ⁵_2[t]+
+    K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
+    K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
+
+    K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1]+
+    
+    K_m[1,k]*yˢᴳ²_1[t]*yˢᴳ²_2[t]+ K_m[2,k]*yˢᴳ²_1[t]*yˢᴳ³_1[t]+ K_m[3,k]*yˢᴳ²_1[t]*yˢᴳ³_2[t]+ K_m[4,k]*yˢᴳ²_1[t]*yˢᴳ⁴_1[t]+
 K_m[5,k]*yˢᴳ²_1[t]*yˢᴳ⁴_2[t]+ K_m[6,k]*yˢᴳ²_1[t]*yˢᴳ⁵_1[t]+ K_m[7,k]*yˢᴳ²_1[t]*yˢᴳ⁵_2[t]+ K_m[8,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_1[t]+
 K_m[9,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_2[t]+ K_m[10,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_1[t]+ K_m[11,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_2[t]+
 
@@ -304,96 +303,56 @@ K_m[64,k]*yˢᴳ²⁷_2[t]*yˢᴳ³⁰_1[t]+ K_m[65,k]*yˢᴳ²⁷_2[t]*yˢᴳ³
 
 K_m[66,k]*yˢᴳ³⁰_1[t]*yˢᴳ³⁰_2[t])
 
-        
-
-        @constraint(model, I_scc[k,t]
-
-        >=Iₗᵢₘ)
-    end
+    @constraint(model, I_scc[t]>=Iₗᵢₘ)
 end
-
-
-k=23
-for t in 1:T   # F=26, IBR1 each SG in 2 3 4 5 27 30   (now it's SG in bus 5)
-    @constraint(model, I_scc[k,t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
-    K_g[3,k]*yˢᴳ³_1[t]+ K_g[4,k]*yˢᴳ³_2[t]+ 
-    K_g[5,k]*yˢᴳ⁴_1[t]+ K_g[6,k]*yˢᴳ⁴_2[t]+
-   
-    K_g[9,k]*yˢᴳ²⁷_1[t]+ K_g[10,k]*yˢᴳ²⁷_2[t]+ 
-    K_g[11,k]*yˢᴳ³⁰_1[t]+ K_g[12,k]*yˢᴳ³⁰_2[t]+
-
-    K_c[1,k]*α₁[1]+ K_c[2,k]*α₂₃[1]+ K_c[3,k]*α₂₆[1]+
-    
-    K_m[1,k]*yˢᴳ²_1[t]*yˢᴳ²_2[t]+ K_m[2,k]*yˢᴳ²_1[t]*yˢᴳ³_1[t]+ K_m[3,k]*yˢᴳ²_1[t]*yˢᴳ³_2[t]+ K_m[4,k]*yˢᴳ²_1[t]*yˢᴳ⁴_1[t]+
-K_m[5,k]*yˢᴳ²_1[t]*yˢᴳ⁴_2[t]+ K_m[8,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_1[t]+
-K_m[9,k]*yˢᴳ²_1[t]*yˢᴳ²⁷_2[t]+ K_m[10,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_1[t]+ K_m[11,k]*yˢᴳ²_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[12,k]*yˢᴳ²_2[t]*yˢᴳ³_1[t]+ K_m[13,k]*yˢᴳ²_2[t]*yˢᴳ³_2[t]+ K_m[14,k]*yˢᴳ²_2[t]*yˢᴳ⁴_1[t]+
-K_m[15,k]*yˢᴳ²_2[t]*yˢᴳ⁴_2[t]+ K_m[18,k]*yˢᴳ²_2[t]*yˢᴳ²⁷_1[t]+
-K_m[19,k]*yˢᴳ²_2[t]*yˢᴳ²⁷_2[t]+ K_m[20,k]*yˢᴳ²_2[t]*yˢᴳ³⁰_1[t]+ K_m[21,k]*yˢᴳ²_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[22,k]*yˢᴳ³_1[t]*yˢᴳ³_2[t]+ K_m[23,k]*yˢᴳ³_1[t]*yˢᴳ⁴_1[t]+
-K_m[24,k]*yˢᴳ³_1[t]*yˢᴳ⁴_2[t]+ K_m[27,k]*yˢᴳ³_1[t]*yˢᴳ²⁷_1[t]+
-K_m[28,k]*yˢᴳ³_1[t]*yˢᴳ²⁷_2[t]+ K_m[29,k]*yˢᴳ³_1[t]*yˢᴳ³⁰_1[t]+ K_m[30,k]*yˢᴳ³_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[31,k]*yˢᴳ³_2[t]*yˢᴳ⁴_1[t]+
-K_m[32,k]*yˢᴳ³_2[t]*yˢᴳ⁴_2[t]+ K_m[35,k]*yˢᴳ³_2[t]*yˢᴳ²⁷_1[t]+
-K_m[36,k]*yˢᴳ³_2[t]*yˢᴳ²⁷_2[t]+ K_m[37,k]*yˢᴳ³_2[t]*yˢᴳ³⁰_1[t]+ K_m[38,k]*yˢᴳ³_2[t]*yˢᴳ³⁰_2[t]+
-
-
-K_m[39,k]*yˢᴳ⁴_1[t]*yˢᴳ⁴_2[t]+ K_m[42,k]*yˢᴳ⁴_1[t]*yˢᴳ²⁷_1[t]+
-K_m[43,k]*yˢᴳ⁴_1[t]*yˢᴳ²⁷_2[t]+ K_m[44,k]*yˢᴳ⁴_1[t]*yˢᴳ³⁰_1[t]+ K_m[45,k]*yˢᴳ⁴_1[t]*yˢᴳ³⁰_2[t]+
-
-
-K_m[48,k]*yˢᴳ⁴_2[t]*yˢᴳ²⁷_1[t]+
-K_m[49,k]*yˢᴳ⁴_2[t]*yˢᴳ²⁷_2[t]+ K_m[50,k]*yˢᴳ⁴_2[t]*yˢᴳ³⁰_1[t]+ K_m[51,k]*yˢᴳ⁴_2[t]*yˢᴳ³⁰_2[t]+
-
-
-K_m[61,k]*yˢᴳ²⁷_1[t]*yˢᴳ²⁷_2[t]+ K_m[62,k]*yˢᴳ²⁷_1[t]*yˢᴳ³⁰_1[t]+ K_m[63,k]*yˢᴳ²⁷_1[t]*yˢᴳ³⁰_2[t]+
-
-K_m[64,k]*yˢᴳ²⁷_2[t]*yˢᴳ³⁰_1[t]+ K_m[65,k]*yˢᴳ²⁷_2[t]*yˢᴳ³⁰_2[t]+
-
-K_m[66,k]*yˢᴳ³⁰_1[t]*yˢᴳ³⁰_2[t])
-
-    
-
-    @constraint(model, I_scc[k,t]
-
-    >=Iₗᵢₘ)
-end
-
 
 #-------Define Objective Functions
-No_load_cost=sum(Cⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))+sum(Cⁿˡ[2].*(yˢᴳ³_1+yˢᴳ³_2))+sum(Cⁿˡ[3].*(yˢᴳ⁴_1+yˢᴳ⁴_2))+sum(Cⁿˡ[4].*(yˢᴳ⁵_1+yˢᴳ⁵_2))+sum(Cⁿˡ[5].*(yˢᴳ²⁷_1+yˢᴳ²⁷_2))+sum(Cⁿˡ[6].*(yˢᴳ³⁰_1+yˢᴳ³⁰_2))    
+@variable(model, No_load_cost[1:T]) 
+@variable(model, Generation_cost[1:T]) 
+@variable(model, noff_cost[1:T]) 
+@variable(model, costs[1:T])
+for t in 1:T
+    @constraint(model, No_load_cost[t]==Cⁿˡ[1]*(yˢᴳ²_1[t]+yˢᴳ²_2[t])+Cⁿˡ[2]*(yˢᴳ³_1[t]+yˢᴳ³_2[t])+Cⁿˡ[3]*(yˢᴳ⁴_1[t]+yˢᴳ⁴_2[t])+Cⁿˡ[4]*(yˢᴳ⁵_1[t]+yˢᴳ⁵_2[t])+Cⁿˡ[5]*(yˢᴳ²⁷_1[t]+yˢᴳ²⁷_2[t])+Cⁿˡ[6]*(yˢᴳ³⁰_1[t]+yˢᴳ³⁰_2[t]))    
+    @constraint(model, Generation_cost[t]==Cᵍᵐ₁[1]*Pˢᴳ²_1[t]+Cᵍᵐ₂[1]*Pˢᴳ²_2[t]+Cᵍᵐ₁[2]*Pˢᴳ³_1[t]+Cᵍᵐ₂[2]*Pˢᴳ³_2[t]+Cᵍᵐ₁[3]*Pˢᴳ⁴_1[t]+Cᵍᵐ₂[3]*Pˢᴳ⁴_2[t]+Cᵍᵐ₁[4]*Pˢᴳ⁵_1[t]+Cᵍᵐ₂[4]*Pˢᴳ⁵_2[t]+Cᵍᵐ₁[5]*Pˢᴳ²⁷_1[t]+Cᵍᵐ₂[5]*Pˢᴳ²⁷_2[t]+Cᵍᵐ₁[6]*Pˢᴳ³⁰_1[t]+Cᵍᵐ₂[6]*Pˢᴳ³⁰_2[t])      
+    @constraint(model, noff_cost[t]==Cᵁ²_1[t]+Cᴰ²_1[t]+Cᵁ³_1[t]+Cᴰ³_1[t]+Cᵁ⁴_1[t]+Cᴰ⁴_1[t]+Cᵁ⁵_1[t]+Cᴰ⁵_1[t]+Cᵁ²⁷_1[t]+Cᴰ²⁷_1[t]+Cᵁ³⁰_1[t]+Cᴰ³⁰_1[t] +Cᵁ²_2[t]+Cᴰ²_2[t]+Cᵁ³_2[t]+Cᴰ³_2[t]+Cᵁ⁴_2[t]+Cᴰ⁴_2[t]+Cᵁ⁵_2[t]+Cᴰ⁵_2[t]+Cᵁ²⁷_2[t]+Cᴰ²⁷_2[t]+Cᵁ³⁰_2[t]+Cᴰ³⁰_2[t] )      
+    @constraint(model, costs[t]==No_load_cost[t]+Generation_cost[t]+noff_cost[t])
+end
 
-Generation_cost=sum(Cᵍᵐ₁[1].*Pˢᴳ²_1+Cᵍᵐ₂[1].*Pˢᴳ²_2)+sum(Cᵍᵐ₁[2].*Pˢᴳ³_1+Cᵍᵐ₂[2].*Pˢᴳ³_2)+sum(Cᵍᵐ₁[3].*Pˢᴳ⁴_1+Cᵍᵐ₂[3].*Pˢᴳ⁴_2)+sum(Cᵍᵐ₁[4].*Pˢᴳ⁵_1+Cᵍᵐ₂[4].*Pˢᴳ⁵_2)+sum(Cᵍᵐ₁[5].*Pˢᴳ²⁷_1+Cᵍᵐ₂[5].*Pˢᴳ²⁷_2)+sum(Cᵍᵐ₁[6].*Pˢᴳ³⁰_1+Cᵍᵐ₂[6].*Pˢᴳ³⁰_2)      # no-load cost
 
-Onoff_cost=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
 
-@objective(model, Min, No_load_cost+ Generation_cost+ Onoff_cost)  # objective function
-#-----------------------------------Solve and Output Results
+@objective(model, Min, sum(costs))  # objective function
+
+
+
+#-------------------------------------Solve and Output Results--------------------------------------------------------------------
 set_optimizer(model , Gurobi.Optimizer)
 # set_attribute(model, "limits/gap", 0.0280)
 # set_time_limit_sec(model, 700.0)
 optimize!(model)
 
-#-----------------------------------Calculate SCC at each bus
-
-I_scc=JuMP.value.(I_scc)
-min_value, min_index= findmin(I_scc)
 
 
+#----------------------------------SG commitment prices for each IBRs bus 
 
- # yˢᴳ²=JuMP.value.(yˢᴳ²)
- # yˢᴳ³=JuMP.value.(yˢᴳ³)
- # yˢᴳ⁴=JuMP.value.(yˢᴳ⁴)
- # yˢᴳ⁵=JuMP.value.(yˢᴳ⁵)
- # yˢᴳ²⁷=JuMP.value.(yˢᴳ²⁷)
- # yˢᴳ³⁰=JuMP.value.(yˢᴳ³⁰)
+costs=JuMP.value.(costs)
 
- # α₁=JuMP.value.(α₁)
- # α₂₃=JuMP.value.(α₂₃)
- # α₂₆=JuMP.value.(α₂₆)
-# α₂₆=JuMP.value.(α₂₆)
-#Z=JuMP.value.(Z)
-#println(value.( Z[1,3,1]))
+costs_no_2=JuMP.value.(costs)
+costs_no_3=JuMP.value.(costs)
+costs_no_4=JuMP.value.(costs)
+costs_no_5=JuMP.value.(costs)
+costs_no_27=JuMP.value.(costs)
+costs_no_30=JuMP.value.(costs)
+
+prices_2=costs-costs_no_2
+prices_3=costs-costs_no_3
+prices_4=costs-costs_no_4
+prices_5=costs-costs_no_5
+prices_27=costs-costs_no_27
+prices_30=costs-costs_no_30
+
+plot(-prices_2,label="SGs in bus 2",linestyle=:solid, marker=:circle, markersize=5)
+plot!(-prices_3,label="SGs in bus 3")
+plot!(-prices_4,label="SGs in bus 4")
+plot!(-prices_5,label="SGs in bus 5")
+plot!(-prices_27,label="SGs in bus 27")
+plot!(-prices_30,label="SGs in bus 30")
