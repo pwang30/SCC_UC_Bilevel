@@ -404,13 +404,6 @@ set_optimizer(model , Gurobi.Optimizer)
 # set_time_limit_sec(model, 700.0)
 optimize!(model)
 
-I_scc_value = value.(I_scc)
-I_scc_min=zeros(30,1)
-for i in 1:30
-    I_scc_min[i]=minimum(I_scc_value[i,:])
-end
-minimum(I_scc_min)
-
 yˢᴳ²_1_value = value.(yˢᴳ²_1)
 yˢᴳ²_2_value = value.(yˢᴳ²_2)
 yˢᴳ³_1_value = value.(yˢᴳ³_1)
@@ -428,10 +421,6 @@ yˢᴳ³⁰_1_value = value.(yˢᴳ³⁰_1)
 α₂₃_value = value.(α₂₃)
 α₂₆_value = value.(α₂₆)
 
-#----------------------------------Calculate SCL in each bus----------------------------------
-
-include("min_SCC_each_bus.jl")
-
 commitment_SGs=zeros(24,12)
 commitment_SGs[:,1]=yˢᴳ²_1_value
 commitment_SGs[:,2]=yˢᴳ²_2_value
@@ -446,13 +435,35 @@ commitment_SGs[:,10]=yˢᴳ²⁷_2_value
 commitment_SGs[:,11]=yˢᴳ³⁰_1_value
 commitment_SGs[:,12]=yˢᴳ³⁰_2_value
 
-SCC_no_SCL_constraint=min_SCC_each_bus(commitment_SGs,I_IBG,β,v_n)
+#----------------------------------Calculate min SCL in each bus----------------------------------
+#include("min_SCC_each_bus.jl")
+SCL_eachbus_noSCL=min_SCC_each_bus(commitment_SGs,I_IBG,β,v_n)
+
+I_scc_value = value.(I_scc)
+
+I_scc_min=zeros(30,1)
+for i in 1:30
+    I_scc_min[i]=minimum(I_scc_value[i,:])
+end
+minimum(I_scc_min)
+
+I_scc_max=zeros(30,1)
+for i in 1:30
+    I_scc_max[i]=maximum(I_scc_value[i,:])
+end
+maximum(I_scc_max)
+
+I_26_SCL_linearized=zeros(1,24)
+I_26_SCL_simplified=zeros(1,24)
+
+I_26_SCL_linearized=I_scc_value[26,:]
+I_26_SCL_simplified=I_scc_value[26,:]
 
 
-plot(ones(30,1)*3)
-bar!(SCC_no_SCL_constraint', xlabel="Category", ylabel="Value", title="Bar Chart")
+plot(I_26_SCL_linearized)
+plot!(I_26_SCL_simplified)
+bar(SCL_eachbus_noSCL', xlabel="Category", ylabel="Value", title="Bar Chart")
 plot!(I_scc_min, xlabel="Category", ylabel="Value", title="Bar Chart")
 
-
-matwrite("SCC_no_SCL_constraint.mat", Dict("SCC_no_SCL_constraint" => SCC_no_SCL_constraint))
-matwrite("I_scc_min.mat", Dict("I_scc_min" => I_scc_min))
+matwrite("SCL_eachbus_noSCL.mat", Dict("SCL_eachbus_noSCL" => SCL_eachbus_noSCL))
+matwrite("I_26_SCL_simplified.mat", Dict("I_26_SCL_simplified" => I_26_SCL_simplified))
