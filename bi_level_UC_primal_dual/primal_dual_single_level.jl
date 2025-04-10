@@ -34,6 +34,7 @@ Load_total=[18.42,17.95,18.29,18.51,18.13,17.88,19.46,21.97,23.17,23.87,
 23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^3*1.2   # (MW)
 T=length(Load_total)
 
+
 Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^3     #   Max generation of SGs                    SGs, buses:2,3,4,5,27,30
 Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^3      #   Min generation of SGs                   SGs, buses:2,3,4,5,27,30
 Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^3        #   Ramp limits of SGs                      SGs, buses:2,3,4,5,27,30
@@ -64,6 +65,7 @@ model= Model()
 @variable(model, Pˢᴳ²⁷_2[1:T])                
 @variable(model, Pˢᴳ³⁰_1[1:T])                
 @variable(model, Pˢᴳ³⁰_2[1:T])  
+
 
 @variable(model, Pᴵᴮᴳ¹[1:T]>=0)         # generation of IBRs (WT) , buses:1, 23, 26 , dual variables: ζᵐⁱⁿₜ  
 @variable(model, Pᴵᴮᴳ²³[1:T]>=0)              
@@ -585,11 +587,23 @@ end
 
 
 #-------Define Objective Functions with binary expansion
-cost_onoff_LL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
-cost_nl_LL=sum(Oⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))+sum(Oⁿˡ[2].*(yˢᴳ³_1+yˢᴳ³_2))+sum(Oⁿˡ[3].*(yˢᴳ⁴_1+yˢᴳ⁴_2))+sum(Oⁿˡ[4].*(yˢᴳ⁵_1+yˢᴳ⁵_2))+sum(Oⁿˡ[5].*(yˢᴳ²⁷_1+yˢᴳ²⁷_2))+sum(Oⁿˡ[6].*(yˢᴳ³⁰_1+yˢᴳ³⁰_2))    
-cost_gene_LL=Oᵐ₁[1]*sum( Pˢᴳ²_1 )+Oᵐ₂[1]*sum( Pˢᴳ²_2 )+sum(Oᵐ₁[2].*Pˢᴳ³_1+Oᵐ₂[2].*Pˢᴳ³_2)+sum(Oᵐ₁[3].*Pˢᴳ⁴_1+Oᵐ₂[3].*Pˢᴳ⁴_2)+sum(Oᵐ₁[4].*Pˢᴳ⁵_1+Oᵐ₂[4].*Pˢᴳ⁵_2)+sum(Oᵐ₁[5].*Pˢᴳ²⁷_1+Oᵐ₂[5].*Pˢᴳ²⁷_2)+sum(Oᵐ₁[6].*Pˢᴳ³⁰_1+Oᵐ₂[6].*Pˢᴳ³⁰_2)   
+cost_SG_1=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Oⁿˡ[1].*(yˢᴳ²_1))+Oᵐ₁[1]*sum( Pˢᴳ²_1 )
+cost_SG_2=sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Oⁿˡ[1].*(yˢᴳ²_2))+Oᵐ₂[1]*sum( Pˢᴳ²_2 )
+cost_SG_3=sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Oⁿˡ[2].*(yˢᴳ³_1))+Oᵐ₁[2]*sum( Pˢᴳ³_1 )
+cost_SG_4=sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Oⁿˡ[2].*(yˢᴳ³_2))+Oᵐ₂[2]*sum( Pˢᴳ³_2 )
+cost_SG_5=sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Oⁿˡ[3].*(yˢᴳ⁴_1))+Oᵐ₁[3]*sum( Pˢᴳ⁴_1 )
+cost_SG_6=sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Oⁿˡ[3].*(yˢᴳ⁴_2))+Oᵐ₂[3]*sum( Pˢᴳ⁴_2 )
+cost_SG_7=sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Oⁿˡ[4].*(yˢᴳ⁵_1))+Oᵐ₁[4]*sum( Pˢᴳ⁵_1 )
+cost_SG_8=sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Oⁿˡ[4].*(yˢᴳ⁵_2))+Oᵐ₂[4]*sum( Pˢᴳ⁵_2 )
+cost_SG_9=sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Oⁿˡ[5].*(yˢᴳ²⁷_1))+Oᵐ₁[5]*sum( Pˢᴳ²⁷_1 )
+cost_SG_10=sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Oⁿˡ[5].*(yˢᴳ²⁷_2))+Oᵐ₂[5]*sum( Pˢᴳ²⁷_2 )
+cost_SG_11=sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)+sum(Oⁿˡ[6].*(yˢᴳ³⁰_1))+Oᵐ₁[6]*sum( Pˢᴳ³⁰_1 )
+cost_SG_12=sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)+sum(Oⁿˡ[6].*(yˢᴳ³⁰_2))+Oᵐ₂[6]*sum( Pˢᴳ³⁰_2 )
+
 cost_IBR_LL=sum(Oᴱ_c[1].*Pᴵᴮᴳ¹) +sum(Oᴱ_c[2].*Pᴵᴮᴳ²³) +sum(Oᴱ_c[3].*Pᴵᴮᴳ²⁶)
-obj_LL=cost_onoff_LL+cost_nl_LL+cost_gene_LL+cost_IBR_LL
+obj_LL=cost_IBR_LL+cost_SG_1+cost_SG_2+cost_SG_3+cost_SG_4+cost_SG_5+cost_SG_6+cost_SG_7+cost_SG_8+cost_SG_9+cost_SG_10+cost_SG_11+cost_SG_12
+
+
 
 @variable(model, obj_DLL_1[1:T])
 for t in 1:T
@@ -612,11 +626,11 @@ for t in 1:T
                                             -Rₘₐₓ[6]*πʳᵈˢᴳ³⁰_1[t] -Rₘₐₓ[6]*πʳᵈˢᴳ³⁰_2[t] -Rₘₐₓ[6]*πʳᵘˢᴳ³⁰_1[t] -Rₘₐₓ[6]*πʳᵘˢᴳ³⁰_2[t])
 end
 
-obj_DLL_comp= sum(obj_DLL_comp_1) + (P_g₀[2]*πʳᵈˢᴳ³_1[1] +P_g₀[2]*πʳᵈˢᴳ³_2[1]) -(P_g₀[2]*πʳᵘˢᴳ³_1[1] +P_g₀[2]*πʳᵘˢᴳ³_2[1]) -(yˢᴳ₀[2]*Kˢᵗ[2]*σˢᵗˢᴳ³_1[1] +yˢᴳ₀[2]*Kˢᵗ[2]*σˢᵗˢᴳ³_2[1]) +(yˢᴳ₀[2]*Kˢʰ[2]*σˢʰˢᴳ³_1[1] +yˢᴳ₀[2]*Kˢʰ[2]*σˢʰˢᴳ³_2[1]
-                                    +P_g₀[3]*πʳᵈˢᴳ⁴_1[1] +P_g₀[3]*πʳᵈˢᴳ⁴_2[1]) -(P_g₀[3]*πʳᵘˢᴳ⁴_1[1] +P_g₀[3]*πʳᵘˢᴳ⁴_2[1]) -(yˢᴳ₀[3]*Kˢᵗ[3]*σˢᵗˢᴳ⁴_1[1] +yˢᴳ₀[3]*Kˢᵗ[3]*σˢᵗˢᴳ⁴_2[1]) +(yˢᴳ₀[3]*Kˢʰ[3]*σˢʰˢᴳ⁴_1[1] +yˢᴳ₀[3]*Kˢʰ[3]*σˢʰˢᴳ⁴_2[1]
-                                    +P_g₀[4]*πʳᵈˢᴳ⁵_1[1] +P_g₀[4]*πʳᵈˢᴳ⁵_2[1]) -(P_g₀[4]*πʳᵘˢᴳ⁵_1[1] +P_g₀[4]*πʳᵘˢᴳ⁵_2[1]) -(yˢᴳ₀[4]*Kˢᵗ[4]*σˢᵗˢᴳ⁵_1[1] +yˢᴳ₀[4]*Kˢᵗ[4]*σˢᵗˢᴳ⁵_2[1]) +(yˢᴳ₀[4]*Kˢʰ[4]*σˢʰˢᴳ⁵_1[1] +yˢᴳ₀[4]*Kˢʰ[4]*σˢʰˢᴳ⁵_2[1]
-                                    +P_g₀[5]*πʳᵈˢᴳ²⁷_1[1] +P_g₀[5]*πʳᵈˢᴳ²⁷_2[1]) -(P_g₀[5]*πʳᵘˢᴳ²⁷_1[1] +P_g₀[5]*πʳᵘˢᴳ²⁷_2[1]) -(yˢᴳ₀[5]*Kˢᵗ[5]*σˢᵗˢᴳ²⁷_1[1] +yˢᴳ₀[5]*Kˢᵗ[5]*σˢᵗˢᴳ²⁷_2[1]) +(yˢᴳ₀[5]*Kˢʰ[5]*σˢʰˢᴳ²⁷_1[1] +yˢᴳ₀[5]*Kˢʰ[5]*σˢʰˢᴳ²⁷_2[1]
-                                    +P_g₀[6]*πʳᵈˢᴳ³⁰_1[1] +P_g₀[6]*πʳᵈˢᴳ³⁰_2[1]) -(P_g₀[6]*πʳᵘˢᴳ³⁰_1[1] +P_g₀[6]*πʳᵘˢᴳ³⁰_2[1]) -(yˢᴳ₀[6]*Kˢᵗ[6]*σˢᵗˢᴳ³⁰_1[1] +yˢᴳ₀[6]*Kˢᵗ[6]*σˢᵗˢᴳ³⁰_2[1]) +(yˢᴳ₀[6]*Kˢʰ[6]*σˢʰˢᴳ³⁰_1[1] +yˢᴳ₀[6]*Kˢʰ[6]*σˢʰˢᴳ³⁰_2[1])
+obj_DLL_comp= sum(obj_DLL_comp_1) + (P_g₀[2]*πʳᵈˢᴳ³_1[1] +P_g₀[2]*πʳᵈˢᴳ³_2[1]) -(P_g₀[2]*πʳᵘˢᴳ³_1[1] +P_g₀[2]*πʳᵘˢᴳ³_2[1]) -(yˢᴳ₀[2]*Kˢᵗ[2]*σˢᵗˢᴳ³_1[1] +yˢᴳ₀[2]*Kˢᵗ[2]*σˢᵗˢᴳ³_2[1]) +(yˢᴳ₀[2]*Kˢʰ[2]*σˢʰˢᴳ³_1[1] +yˢᴳ₀[2]*Kˢʰ[2]*σˢʰˢᴳ³_2[1])
+                                    +(P_g₀[3]*πʳᵈˢᴳ⁴_1[1] +P_g₀[3]*πʳᵈˢᴳ⁴_2[1]) -(P_g₀[3]*πʳᵘˢᴳ⁴_1[1] +P_g₀[3]*πʳᵘˢᴳ⁴_2[1]) -(yˢᴳ₀[3]*Kˢᵗ[3]*σˢᵗˢᴳ⁴_1[1] +yˢᴳ₀[3]*Kˢᵗ[3]*σˢᵗˢᴳ⁴_2[1]) +(yˢᴳ₀[3]*Kˢʰ[3]*σˢʰˢᴳ⁴_1[1] +yˢᴳ₀[3]*Kˢʰ[3]*σˢʰˢᴳ⁴_2[1])
+                                    +(P_g₀[4]*πʳᵈˢᴳ⁵_1[1] +P_g₀[4]*πʳᵈˢᴳ⁵_2[1]) -(P_g₀[4]*πʳᵘˢᴳ⁵_1[1] +P_g₀[4]*πʳᵘˢᴳ⁵_2[1]) -(yˢᴳ₀[4]*Kˢᵗ[4]*σˢᵗˢᴳ⁵_1[1] +yˢᴳ₀[4]*Kˢᵗ[4]*σˢᵗˢᴳ⁵_2[1]) +(yˢᴳ₀[4]*Kˢʰ[4]*σˢʰˢᴳ⁵_1[1] +yˢᴳ₀[4]*Kˢʰ[4]*σˢʰˢᴳ⁵_2[1])
+                                    +(P_g₀[5]*πʳᵈˢᴳ²⁷_1[1] +P_g₀[5]*πʳᵈˢᴳ²⁷_2[1]) -(P_g₀[5]*πʳᵘˢᴳ²⁷_1[1] +P_g₀[5]*πʳᵘˢᴳ²⁷_2[1]) -(yˢᴳ₀[5]*Kˢᵗ[5]*σˢᵗˢᴳ²⁷_1[1] +yˢᴳ₀[5]*Kˢᵗ[5]*σˢᵗˢᴳ²⁷_2[1]) +(yˢᴳ₀[5]*Kˢʰ[5]*σˢʰˢᴳ²⁷_1[1] +yˢᴳ₀[5]*Kˢʰ[5]*σˢʰˢᴳ²⁷_2[1])
+                                    +(P_g₀[6]*πʳᵈˢᴳ³⁰_1[1] +P_g₀[6]*πʳᵈˢᴳ³⁰_2[1]) -(P_g₀[6]*πʳᵘˢᴳ³⁰_1[1] +P_g₀[6]*πʳᵘˢᴳ³⁰_2[1]) -(yˢᴳ₀[6]*Kˢᵗ[6]*σˢᵗˢᴳ³⁰_1[1] +yˢᴳ₀[6]*Kˢᵗ[6]*σˢᵗˢᴳ³⁰_2[1]) +(yˢᴳ₀[6]*Kˢʰ[6]*σˢʰˢᴳ³⁰_1[1] +yˢᴳ₀[6]*Kˢʰ[6]*σˢʰˢᴳ³⁰_2[1])
 
 obj_DLL=sum( obj_DLL_1 ) + obj_DLL_stra +obj_DLL_comp+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
@@ -631,48 +645,105 @@ optimize!(model)
 obj_LL=JuMP.value(obj_LL)
 obj_DLL=JuMP.value(obj_DLL)
 DG=obj_LL-obj_DLL
-
 r_DG_matrix=DG/obj_LL
 
 
 
-λ_F=JuMP.value.(λ_F) 
-marketclearingprices=JuMP.value.(λᴱ) 
-I_₂₆=JuMP.value.(I_₂₆)
+#-----------------------------------Analysis of the results-----------------------------------
+λᴱ=JuMP.value.(λᴱ) 
+λ_F=JuMP.value.(λ_F)
 
-AS_price_26=λ_F[1,:]
-AS_price_29=λ_F[2,:]
-AS_price_30=λ_F[3,:]
-
+yˢᴳ²_1=JuMP.value.(yˢᴳ²_1)
 yˢᴳ²_2=JuMP.value.(yˢᴳ²_2)
+yˢᴳ³_1=JuMP.value.(yˢᴳ³_1)
+yˢᴳ³_2=JuMP.value.(yˢᴳ³_2)
+yˢᴳ⁴_1=JuMP.value.(yˢᴳ⁴_1)
+yˢᴳ⁴_2=JuMP.value.(yˢᴳ⁴_2)
+yˢᴳ⁵_1=JuMP.value.(yˢᴳ⁵_1)
+yˢᴳ⁵_2=JuMP.value.(yˢᴳ⁵_2)
+yˢᴳ²⁷_1=JuMP.value.(yˢᴳ²⁷_1)
+yˢᴳ²⁷_2=JuMP.value.(yˢᴳ²⁷_2)
+yˢᴳ³⁰_1=JuMP.value.(yˢᴳ³⁰_1)
+yˢᴳ³⁰_2=JuMP.value.(yˢᴳ³⁰_2)
 
-bar(λ_F[3,:])
-print(λ_F[3,:])
-bar(marketclearingprices)
+Pˢᴳ²_1=JuMP.value.(Pˢᴳ²_1)
+Pˢᴳ²_2=JuMP.value.(Pˢᴳ²_2)
+Pˢᴳ³_1=JuMP.value.(Pˢᴳ³_1)
+Pˢᴳ³_2=JuMP.value.(Pˢᴳ³_2)
+Pˢᴳ⁴_1=JuMP.value.(Pˢᴳ⁴_1)
+Pˢᴳ⁴_2=JuMP.value.(Pˢᴳ⁴_2)
+Pˢᴳ⁵_1=JuMP.value.(Pˢᴳ⁵_1)
+Pˢᴳ⁵_2=JuMP.value.(Pˢᴳ⁵_2)
+Pˢᴳ²⁷_1=JuMP.value.(Pˢᴳ²⁷_1)
+Pˢᴳ²⁷_2=JuMP.value.(Pˢᴳ²⁷_2)
+Pˢᴳ³⁰_1=JuMP.value.(Pˢᴳ³⁰_1)
+Pˢᴳ³⁰_2=JuMP.value.(Pˢᴳ³⁰_2)
 
-plot!(λ_F[1,:])
+cost_SG_1=JuMP.value.(cost_SG_1)
+cost_SG_2=JuMP.value.(cost_SG_2)
+cost_SG_3=JuMP.value.(cost_SG_3)   
+cost_SG_4=JuMP.value.(cost_SG_4)
+cost_SG_5=JuMP.value.(cost_SG_5)
+cost_SG_6=JuMP.value.(cost_SG_6)
+cost_SG_7=JuMP.value.(cost_SG_7)
+cost_SG_8=JuMP.value.(cost_SG_8)
+cost_SG_9=JuMP.value.(cost_SG_9)
+cost_SG_10=JuMP.value.(cost_SG_10)
+cost_SG_11=JuMP.value.(cost_SG_11)
+cost_SG_12=JuMP.value.(cost_SG_12)
 
-bar(I_₂₆)
 
-
+energy_revenue_1=sum(λᴱ.*Pˢᴳ²_1)
+energy_revenue_2=sum(λᴱ.*Pˢᴳ²_2)
+energy_revenue_3=sum(λᴱ.*Pˢᴳ³_1)
+energy_revenue_4=sum(λᴱ.*Pˢᴳ³_2)
+energy_revenue_5=sum(λᴱ.*Pˢᴳ⁴_1)
+energy_revenue_6=sum(λᴱ.*Pˢᴳ⁴_2)
+energy_revenue_7=sum(λᴱ.*Pˢᴳ⁵_1)
+energy_revenue_8=sum(λᴱ.*Pˢᴳ⁵_2)
+energy_revenue_9=sum(λᴱ.*Pˢᴳ²⁷_1)
+energy_revenue_10=sum(λᴱ.*Pˢᴳ²⁷_2)
+energy_revenue_11=sum(λᴱ.*Pˢᴳ³⁰_1)
+energy_revenue_12=sum(λᴱ.*Pˢᴳ³⁰_2)
  
+AS_revenue_1=sum(λ_F[1,:].*yˢᴳ²_1)+sum(λ_F[2,:].*yˢᴳ²_1)+sum(λ_F[3,:].*yˢᴳ²_1)
+AS_revenue_2=sum(λ_F[1,:].*yˢᴳ²_2)+sum(λ_F[2,:].*yˢᴳ²_2)+sum(λ_F[3,:].*yˢᴳ²_2)
+AS_revenue_3=sum(λ_F[1,:].*yˢᴳ³_1)+sum(λ_F[2,:].*yˢᴳ³_1)+sum(λ_F[3,:].*yˢᴳ³_1)
+AS_revenue_4=sum(λ_F[1,:].*yˢᴳ³_2)+sum(λ_F[2,:].*yˢᴳ³_2)+sum(λ_F[3,:].*yˢᴳ³_2)
+AS_revenue_5=sum(λ_F[1,:].*yˢᴳ⁴_1)+sum(λ_F[2,:].*yˢᴳ⁴_1)+sum(λ_F[3,:].*yˢᴳ⁴_1)
+AS_revenue_6=sum(λ_F[1,:].*yˢᴳ⁴_2)+sum(λ_F[2,:].*yˢᴳ⁴_2)+sum(λ_F[3,:].*yˢᴳ⁴_2)
+AS_revenue_7=sum(λ_F[1,:].*yˢᴳ⁵_1)+sum(λ_F[2,:].*yˢᴳ⁵_1)+sum(λ_F[3,:].*yˢᴳ⁵_1)
+AS_revenue_8=sum(λ_F[1,:].*yˢᴳ⁵_2)+sum(λ_F[2,:].*yˢᴳ⁵_2)+sum(λ_F[3,:].*yˢᴳ⁵_2)
+AS_revenue_9=sum(λ_F[1,:].*yˢᴳ²⁷_1)+sum(λ_F[2,:].*yˢᴳ²⁷_1)+sum(λ_F[3,:].*yˢᴳ²⁷_1)
+AS_revenue_10=sum(λ_F[1,:].*yˢᴳ²⁷_2)+sum(λ_F[2,:].*yˢᴳ²⁷_2)+sum(λ_F[3,:].*yˢᴳ²⁷_2)
+AS_revenue_11=sum(λ_F[1,:].*yˢᴳ³⁰_1)+sum(λ_F[2,:].*yˢᴳ³⁰_1)+sum(λ_F[3,:].*yˢᴳ³⁰_1)
+AS_revenue_12=sum(λ_F[1,:].*yˢᴳ³⁰_2)+sum(λ_F[2,:].*yˢᴳ³⁰_2)+sum(λ_F[3,:].*yˢᴳ³⁰_2)
 
-yˢᴳ²_1 = value.(yˢᴳ²_1)
-yˢᴳ²_2 = value.(yˢᴳ²_2)
-yˢᴳ³_1 = value.(yˢᴳ³_1)
-yˢᴳ³_2 = value.(yˢᴳ³_2)
-yˢᴳ⁴_1 = value.(yˢᴳ⁴_1)
-yˢᴳ⁴_2 = value.(yˢᴳ⁴_2)
-yˢᴳ⁵_1 = value.(yˢᴳ⁵_1)
-yˢᴳ⁵_2 = value.(yˢᴳ⁵_2)
-yˢᴳ²⁷_1 = value.(yˢᴳ²⁷_1)
-yˢᴳ²⁷_2 = value.(yˢᴳ²⁷_2)
-yˢᴳ³⁰_2 = value.(yˢᴳ³⁰_2)
-yˢᴳ³⁰_1 = value.(yˢᴳ³⁰_1)
+profits_1=energy_revenue_1+AS_revenue_1-cost_SG_1
+profits_2=energy_revenue_2+AS_revenue_2-cost_SG_2
+profits_3=energy_revenue_3+AS_revenue_3-cost_SG_3
+profits_4=energy_revenue_4+AS_revenue_4-cost_SG_4
+profits_5=energy_revenue_5+AS_revenue_5-cost_SG_5
+profits_6=energy_revenue_6+AS_revenue_6-cost_SG_6
+profits_7=energy_revenue_7+AS_revenue_7-cost_SG_7
+profits_8=energy_revenue_8+AS_revenue_8-cost_SG_8
+profits_9=energy_revenue_9+AS_revenue_9-cost_SG_9
+profits_10=energy_revenue_10+AS_revenue_10-cost_SG_10
+profits_11=energy_revenue_11+AS_revenue_11-cost_SG_11
+profits_12=energy_revenue_12+AS_revenue_12-cost_SG_12   
 
-α₁ = value.(α₁)
-α₂₃ = value.(α₂₃)
-I_₂₆= value.(I_₂₆)
+
+costs=[cost_SG_1,cost_SG_2,cost_SG_3,cost_SG_4,cost_SG_5,cost_SG_6,cost_SG_7,cost_SG_8,cost_SG_9,cost_SG_10,cost_SG_11,cost_SG_12]
+profits=[profits_1,profits_2,profits_3,profits_4,profits_5,profits_6,profits_7,profits_8,profits_9,profits_10,profits_11,profits_12]
+energy_revenues=[energy_revenue_1,energy_revenue_2,energy_revenue_3,energy_revenue_4,energy_revenue_5,energy_revenue_6,energy_revenue_7,energy_revenue_8,energy_revenue_9,energy_revenue_10,energy_revenue_11,energy_revenue_12]
+AS_revenues=[AS_revenue_1,AS_revenue_2,AS_revenue_3,AS_revenue_4,AS_revenue_5,AS_revenue_6,AS_revenue_7,AS_revenue_8,AS_revenue_9,AS_revenue_10,AS_revenue_11,AS_revenue_12]
+
+matwrite("single_level_SCL_costs.mat", Dict("single_level_SCL_costs" => costs))
+matwrite("single_level_SCL_profits.mat", Dict("single_level_SCL_profits" => profits))
+matwrite("single_level_SCL_energy_revenues.mat", Dict("single_level_SCL_energy_revenues" => energy_revenues))
+matwrite("single_level_SCL_AS_revenues.mat", Dict("single_level_SCL_AS_revenues" => AS_revenues))
+
+
 
 
 I_min=zeros(1,30)  
@@ -697,5 +768,6 @@ print(I_min)
 
 bar(I_min')
 
+matwrite("AS_peices.mat", Dict("AS_peices" => λ_F))
 matwrite("I_min_withSCL.mat", Dict("I_min_withSCL" => I_min))
-matwrite("marketclearingprices_withSCL.mat", Dict("marketclearingprices_withSCL" => marketclearingprices))
+matwrite("marketclearingprices_with_SCL.mat", Dict("marketclearingprices_with_SCL" => marketclearingprices))
