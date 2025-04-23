@@ -670,6 +670,7 @@ revenue_energy_UL=sum( z₁ )+sum( z₂ )                   # revenue from marke
 revenue_SCL_UL=sum(z_5)+sum(z_6)+sum(z_7)+sum(z_8)+sum(z_9)+sum(z_10)                                     # revenue from commit online to offer AS
 obj_UL=revenue_energy_UL +revenue_SCL_UL -cost_nl_UL -cost_gene_UL -cost_onoff_UL    # objective function of UL
 
+
 cost_onoff_LL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
 cost_nl_LL=sum(Oⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))+sum(Oⁿˡ[2].*(yˢᴳ³_1+yˢᴳ³_2))+sum(Oⁿˡ[3].*(yˢᴳ⁴_1+yˢᴳ⁴_2))+sum(Oⁿˡ[4].*(yˢᴳ⁵_1+yˢᴳ⁵_2))+sum(Oⁿˡ[5].*(yˢᴳ²⁷_1+yˢᴳ²⁷_2))+sum(Oⁿˡ[6].*(yˢᴳ³⁰_1+yˢᴳ³⁰_2))    
 cost_gene_LL=Oᵐ₁[1]*sum( z₃ )+Oᵐ₂[1]*sum( z₄ )+sum(Oᵐ₁[2].*Pˢᴳ³_1+Oᵐ₂[2].*Pˢᴳ³_2)+sum(Oᵐ₁[3].*Pˢᴳ⁴_1+Oᵐ₂[3].*Pˢᴳ⁴_2)+sum(Oᵐ₁[4].*Pˢᴳ⁵_1+Oᵐ₂[4].*Pˢᴳ⁵_2)+sum(Oᵐ₁[5].*Pˢᴳ²⁷_1+Oᵐ₂[5].*Pˢᴳ²⁷_2)+sum(Oᵐ₁[6].*Pˢᴳ³⁰_1+Oᵐ₂[6].*Pˢᴳ³⁰_2)   
@@ -724,21 +725,220 @@ obj_LL=JuMP.value(obj_LL)
 obj_DLL=JuMP.value(obj_DLL)
 DG=obj_LL-obj_DLL
 
-r_DG_matrix=DG/obj_LL
+r_DG=DG/obj_DLL*100
 
+#-----------economic metrics for strategic one
+revenue_energy_UL=JuMP.value(revenue_energy_UL)
+revenue_SCL_UL=JuMP.value(revenue_SCL_UL)
+cost_nl_UL=JuMP.value(cost_nl_UL)
+cost_gene_UL=JuMP.value(cost_gene_UL)
+cost_onoff_UL=JuMP.value(cost_onoff_UL)
+reveunes_UL=revenue_energy_UL +revenue_SCL_UL
+
+costs_UL=cost_nl_UL +cost_gene_UL +cost_onoff_UL
+
+
+#-----------economic metrics for non-strategic one
+Pˢᴳ³_1=JuMP.value.(Pˢᴳ³_1)
+Pˢᴳ³_2=JuMP.value.(Pˢᴳ³_2)
+Pˢᴳ⁴_1=JuMP.value.(Pˢᴳ⁴_1)
+Pˢᴳ⁴_2=JuMP.value.(Pˢᴳ⁴_2)
+Pˢᴳ⁵_1=JuMP.value.(Pˢᴳ⁵_1)
+Pˢᴳ⁵_2=JuMP.value.(Pˢᴳ⁵_2)
+Pˢᴳ²⁷_1=JuMP.value.(Pˢᴳ²⁷_1)
+Pˢᴳ²⁷_2=JuMP.value.(Pˢᴳ²⁷_2)
+Pˢᴳ³⁰_1=JuMP.value.(Pˢᴳ³⁰_1)
+Pˢᴳ³⁰_2=JuMP.value.(Pˢᴳ³⁰_2)
+yˢᴳ³_1=JuMP.value.(yˢᴳ³_1)
+yˢᴳ³_2=JuMP.value.(yˢᴳ³_2)
+yˢᴳ⁴_1=JuMP.value.(yˢᴳ⁴_1)
+yˢᴳ⁴_2=JuMP.value.(yˢᴳ⁴_2)
+yˢᴳ⁵_1=JuMP.value.(yˢᴳ⁵_1)
+yˢᴳ⁵_2=JuMP.value.(yˢᴳ⁵_2)
+yˢᴳ²⁷_1=JuMP.value.(yˢᴳ²⁷_1)
+yˢᴳ²⁷_2=JuMP.value.(yˢᴳ²⁷_2)
+yˢᴳ³⁰_1=JuMP.value.(yˢᴳ³⁰_1)
+yˢᴳ³⁰_2=JuMP.value.(yˢᴳ³⁰_2)
+Cᵁ³_1=JuMP.value.(Cᵁ³_1)
+Cᴰ³_1=JuMP.value.(Cᴰ³_1)
+Cᵁ⁴_1=JuMP.value.(Cᵁ⁴_1)
+Cᴰ⁴_1=JuMP.value.(Cᴰ⁴_1)
+Cᵁ⁵_1=JuMP.value.(Cᵁ⁵_1)
+Cᴰ⁵_1=JuMP.value.(Cᴰ⁵_1)
+Cᵁ²⁷_1=JuMP.value.(Cᵁ²⁷_1)
+Cᴰ²⁷_1=JuMP.value.(Cᴰ²⁷_1)
+Cᵁ³⁰_1=JuMP.value.(Cᵁ³⁰_1)
+Cᴰ³⁰_1=JuMP.value.(Cᴰ³⁰_1)
+Cᵁ³_2=JuMP.value.(Cᵁ³_2)
+Cᴰ³_2=JuMP.value.(Cᴰ³_2)
+Cᵁ⁴_2=JuMP.value.(Cᵁ⁴_2)
+Cᴰ⁴_2=JuMP.value.(Cᴰ⁴_2)
+Cᵁ⁵_2=JuMP.value.(Cᵁ⁵_2)
+Cᴰ⁵_2=JuMP.value.(Cᴰ⁵_2)
+Cᵁ²⁷_2=JuMP.value.(Cᵁ²⁷_2)
+Cᴰ²⁷_2=JuMP.value.(Cᴰ²⁷_2)
+Cᵁ³⁰_2=JuMP.value.(Cᵁ³⁰_2)
+Cᴰ³⁰_2=JuMP.value.(Cᴰ³⁰_2)
 
 λ_F=JuMP.value.(λ_F) 
 λᴱ=JuMP.value.(λᴱ) 
 kᵐ=JuMP.value.(kᵐ)
 I_₂₆=JuMP.value.(I_₂₆)
+I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
 
-bar(λ_F[3,:])
 
-bar(kᵐ)
+cost_onoff_G3_1=sum(Cᵁ³_1)+sum(Cᴰ³_1)   # G3_1
+cost_nl_G3_1=sum(Oⁿˡ[2].*yˢᴳ³_1)   
+cost_gene_G3_1=sum(Oᵐ₁[2].*Pˢᴳ³_1)
+revenue_energy_G3_1=sum(λᴱ.*Pˢᴳ³_1)
+revenue_SCL_G3_1=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ³_1)
+costs_G3_1=cost_nl_G3_1+cost_gene_G3_1+cost_onoff_G3_1
+profits_G3_1=revenue_energy_G3_1+revenue_SCL_G3_1-costs_G3_1
 
-bar(I_₂₆)
-bar(I_₃₀)
+cost_onoff_G3_2=sum(Cᵁ³_2)+sum(Cᴰ³_2)   # G3_2
+cost_nl_G3_2=sum(Oⁿˡ[2].*yˢᴳ³_2)
+cost_gene_G3_2=sum(Oᵐ₂[2].*Pˢᴳ³_2)
+revenue_energy_G3_2=sum(λᴱ.*Pˢᴳ³_2)
+revenue_SCL_G3_2=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ³_2)
+costs_G3_2=cost_nl_G3_2+cost_gene_G3_2+cost_onoff_G3_2
+profits_G3_2=revenue_energy_G3_2+revenue_SCL_G3_2-costs_G3_2
 
-plot(λᴱ)
+cost_onoff_G4_1=sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)   # G4_1
+cost_nl_G4_1=sum(Oⁿˡ[3].*yˢᴳ⁴_1)
+cost_gene_G4_1=sum(Oᵐ₁[3].*Pˢᴳ⁴_1)
+revenue_energy_G4_1=sum(λᴱ.*Pˢᴳ⁴_1)
+revenue_SCL_G4_1=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ⁴_1)
+costs_G4_1=cost_nl_G4_1+cost_gene_G4_1+cost_onoff_G4_1
+profits_G4_1=revenue_energy_G4_1+revenue_SCL_G4_1-costs_G4_1
+
+cost_onoff_G4_2=sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)   # G4_2
+cost_nl_G4_2=sum(Oⁿˡ[3].*yˢᴳ⁴_2)
+cost_gene_G4_2=sum(Oᵐ₂[3].*Pˢᴳ⁴_2)
+revenue_energy_G4_2=sum(λᴱ.*Pˢᴳ⁴_2)
+revenue_SCL_G4_2=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ⁴_2)
+costs_G4_2=cost_nl_G4_2+cost_gene_G4_2+cost_onoff_G4_2
+profits_G4_2=revenue_energy_G4_2+revenue_SCL_G4_2-costs_G4_2
+
+cost_onoff_G5_1=sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)   # G5_1
+cost_nl_G5_1=sum(Oⁿˡ[4].*yˢᴳ⁵_1)
+cost_gene_G5_1=sum(Oᵐ₁[4].*Pˢᴳ⁵_1)
+revenue_energy_G5_1=sum(λᴱ.*Pˢᴳ⁵_1)
+revenue_SCL_G5_1=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ⁵_1)
+costs_G5_1=cost_nl_G5_1+cost_gene_G5_1+cost_onoff_G5_1
+profits_G5_1=revenue_energy_G5_1+revenue_SCL_G5_1-costs_G5_1
+
+cost_onoff_G5_2=sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)   # G5_2
+cost_nl_G5_2=sum(Oⁿˡ[4].*yˢᴳ⁵_2)
+cost_gene_G5_2=sum(Oᵐ₂[4].*Pˢᴳ⁵_2)
+revenue_energy_G5_2=sum(λᴱ.*Pˢᴳ⁵_2)
+revenue_SCL_G5_2=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ⁵_2)
+costs_G5_2=cost_nl_G5_2+cost_gene_G5_2+cost_onoff_G5_2
+profits_G5_2=revenue_energy_G5_2+revenue_SCL_G5_2-costs_G5_2
+
+cost_onoff_G27_1=sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)   # G27_1
+cost_nl_G27_1=sum(Oⁿˡ[5].*yˢᴳ²⁷_1)
+cost_gene_G27_1=sum(Oᵐ₁[5].*Pˢᴳ²⁷_1)
+revenue_energy_G27_1=sum(λᴱ.*Pˢᴳ²⁷_1)
+revenue_SCL_G27_1=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ²⁷_1)
+costs_G27_1=cost_nl_G27_1+cost_gene_G27_1+cost_onoff_G27_1
+profits_G27_1=revenue_energy_G27_1+revenue_SCL_G27_1-costs_G27_1
+
+cost_onoff_G27_2=sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)   # G27_2
+cost_nl_G27_2=sum(Oⁿˡ[5].*yˢᴳ²⁷_2)
+cost_gene_G27_2=sum(Oᵐ₂[5].*Pˢᴳ²⁷_2)
+revenue_energy_G27_2=sum(λᴱ.*Pˢᴳ²⁷_2)
+revenue_SCL_G27_2=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ²⁷_2)
+costs_G27_2=cost_nl_G27_2+cost_gene_G27_2+cost_onoff_G27_2
+profits_G27_2=revenue_energy_G27_2+revenue_SCL_G27_2-costs_G27_2
+
+cost_onoff_G30_1=sum(Cᴰ³⁰_1)+sum(Cᴰ³⁰_1)   # G30_1
+cost_nl_G30_1=sum(Oⁿˡ[6].*yˢᴳ³⁰_1)
+cost_gene_G30_1=sum(Oᵐ₁[6].*Pˢᴳ³⁰_1)
+revenue_energy_G30_1=sum(λᴱ.*Pˢᴳ³⁰_1)
+revenue_SCL_G30_1=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ³⁰_1)
+costs_G30_1=cost_nl_G30_1+cost_gene_G30_1+cost_onoff_G30_1
+profits_G30_1=revenue_energy_G30_1+revenue_SCL_G30_1-costs_G30_1
+
+cost_onoff_G30_2=sum(Cᴰ³⁰_2)+sum(Cᴰ³⁰_2)   # G30_2
+cost_nl_G30_2=sum(Oⁿˡ[6].*yˢᴳ³⁰_2)
+cost_gene_G30_2=sum(Oᵐ₂[6].*Pˢᴳ³⁰_2)
+revenue_energy_G30_2=sum(λᴱ.*Pˢᴳ³⁰_2)
+revenue_SCL_G30_2=sum( (λ_F[1,:]+λ_F[2,:]+λ_F[3,:]).*yˢᴳ³⁰_2)
+costs_G30_2=cost_nl_G30_2+cost_gene_G30_2+cost_onoff_G30_2
+profits_G30_2=revenue_energy_G30_2+revenue_SCL_G30_2-costs_G30_2
+
+matwrite("revenue_energy_UL_bus2.mat", Dict("revenue_energy_UL_bus2" => revenue_energy_UL))
+matwrite("revenue_SCL_UL_bus2.mat", Dict("revenue_SCL_UL_bus2" => revenue_SCL_UL))
+
+
+matwrite("k_bus_2.mat", Dict("k_bus_2" => kᵐ))
+
+matwrite("energy_prices_bus_2.mat", Dict("energy_prices_bus_2" => λᴱ))
+
+matwrite("SCL_prices_bus_2_26.mat", Dict("SCL_prices_bus_2_26" => λ_F[1,:]))
+matwrite("SCL_prices_bus_2_29.mat", Dict("SCL_prices_bus_2_29" => λ_F[2,:]))
+matwrite("SCL_prices_bus_2_30.mat", Dict("SCL_prices_bus_2_30" => λ_F[3,:]))
+
+matwrite("I_bus_2_26.mat", Dict("I_bus_2_26" => I_₂₆))
+matwrite("I_bus_2_29.mat", Dict("I_bus_2_29" => I_₂₉))
+matwrite("I_bus_2_30.mat", Dict("I_bus_2_30" => I_₃₀))
+
+matwrite("reveunes_UL_bus_2.mat", Dict("reveunes_UL" => reveunes_UL))
+matwrite("costs_UL_bus_2.mat", Dict("costs_UL" => costs_UL))
+matwrite("profits_UL_bus_2.mat", Dict("profits_UL" => obj_UL))
+
+matwrite("profits_bus_2_G3_1.mat", Dict("profits_bus_2_G3_1" => profits_G3_1))
+matwrite("profits_bus_2_G3_2.mat", Dict("profits_bus_2_G3_2" => profits_G3_2))
+matwrite("profits_bus_2_G4_1.mat", Dict("profits_bus_2_G4_1" => profits_G4_1))
+matwrite("profits_bus_2_G4_2.mat", Dict("profits_bus_2_G4_2" => profits_G4_2))
+matwrite("profits_bus_2_G5_1.mat", Dict("profits_bus_2_G5_1" => profits_G5_1))
+matwrite("profits_bus_2_G5_2.mat", Dict("profits_bus_2_G5_2" => profits_G5_2))
+matwrite("profits_bus_2_G27_1.mat", Dict("profits_bus_2_G27_1" => profits_G27_1))
+matwrite("profits_bus_2_G27_2.mat", Dict("profits_bus_2_G27_2" => profits_G27_2))
+matwrite("profits_bus_2_G30_1.mat", Dict("profits_bus_2_G30_1" => profits_G30_1))
+matwrite("profits_bus_2_G30_2.mat", Dict("profits_bus_2_G30_2" => profits_G30_2))
+
+
+
+
+matwrite("revenue_SCL_G3_1.mat", Dict("revenue_SCL_G3_1" => revenue_SCL_G3_1))
+matwrite("revenue_energy_G3_1.mat", Dict("revenue_energy_G3_1" => revenue_energy_G3_1))
+matwrite("costs_G3_1.mat", Dict("costs_G3_1" => costs_G3_1))
+
+matwrite("revenue_SCL_G3_2.mat", Dict("revenue_SCL_G3_2" => revenue_SCL_G3_2))
+matwrite("revenue_energy_G3_2.mat", Dict("revenue_energy_G3_2" => revenue_energy_G3_2))
+matwrite("costs_G3_2.mat", Dict("costs_G3_2" => costs_G3_2))
+
+matwrite("revenue_SCL_G4_1.mat", Dict("revenue_SCL_G4_1" => revenue_SCL_G4_1))
+matwrite("revenue_energy_G4_1.mat", Dict("revenue_energy_G4_1" => revenue_energy_G4_1))
+matwrite("costs_G4_1.mat", Dict("costs_G4_1" => costs_G4_1))
+
+matwrite("revenue_SCL_G4_2.mat", Dict("revenue_SCL_G4_2" => revenue_SCL_G4_2))
+matwrite("revenue_energy_G4_2.mat", Dict("revenue_energy_G4_2" => revenue_energy_G4_2))
+matwrite("costs_G4_2.mat", Dict("costs_G4_2" => costs_G4_2))
+
+matwrite("revenue_SCL_G5_1.mat", Dict("revenue_SCL_G5_1" => revenue_SCL_G5_1))
+matwrite("revenue_energy_G5_1.mat", Dict("revenue_energy_G5_1" => revenue_energy_G5_1))
+matwrite("costs_G5_1.mat", Dict("costs_G5_1" => costs_G5_1))
+
+matwrite("revenue_SCL_G5_2.mat", Dict("revenue_SCL_G5_2" => revenue_SCL_G5_2))
+matwrite("revenue_energy_G5_2.mat", Dict("revenue_energy_G5_2" => revenue_energy_G5_2))
+matwrite("costs_G5_2.mat", Dict("costs_G5_2" => costs_G5_2))
+
+matwrite("revenue_SCL_G27_1.mat", Dict("revenue_SCL_G27_1" => revenue_SCL_G27_1))
+matwrite("revenue_energy_G27_1.mat", Dict("revenue_energy_G27_1" => revenue_energy_G27_1))
+matwrite("costs_G27_1.mat", Dict("costs_G27_1" => costs_G27_1))
+
+matwrite("revenue_SCL_G27_2.mat", Dict("revenue_SCL_G27_2" => revenue_SCL_G27_2))
+matwrite("revenue_energy_G27_2.mat", Dict("revenue_energy_G27_2" => revenue_energy_G27_2))
+matwrite("costs_G27_2.mat", Dict("costs_G27_2" => costs_G27_2))
+
+matwrite("revenue_SCL_G30_1.mat", Dict("revenue_SCL_G30_1" => revenue_SCL_G30_1))
+matwrite("revenue_energy_G30_1.mat", Dict("revenue_energy_G30_1" => revenue_energy_G30_1))  
+matwrite("costs_G30_1.mat", Dict("costs_G30_1" => costs_G30_1))
+
+matwrite("revenue_SCL_G30_2.mat", Dict("revenue_SCL_G30_2" => revenue_SCL_G30_2))
+matwrite("revenue_energy_G30_2.mat", Dict("revenue_energy_G30_2" => revenue_energy_G30_2))
+matwrite("costs_G30_2.mat", Dict("costs_G30_2" => costs_G30_2))
 
