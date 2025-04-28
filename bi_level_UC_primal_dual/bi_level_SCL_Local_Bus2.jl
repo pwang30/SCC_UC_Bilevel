@@ -11,6 +11,10 @@ include("offline_trainning.jl")
 include("admittance_matrix_calculation.jl") 
 # SGs, buses:2,3,4,5,27,30    IBRs, buses:1,23,26
 
+matfile = matopen("AS_offer_price.mat")
+A = read(matfile, "SCL_offer_price")  # 指定你要读取的变量名
+close(matfile)
+
 
 
 #-----------------------------------Define Parameters for Calculating SCL-----------------------------------
@@ -25,35 +29,45 @@ K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_S
 
 
 
-#-----------------------------------Define Parameters for Optimization-----------------------------------
-IBG₁=[2,1.5,1.6,1.8,1.3,0.6,2.8,3.3,3.9,4,3.3,2.9,2.7,2,0.2,3.2,5.1,3.1,1.8,2,1.3,1,2,3.8]*10^3                    # Wind_bus_1
-IBG₂₃=[4.7,5.1,4.3,4.1,3.8,3.9,4,5,5,4.8,3.9,4.3,5,5.2,5.8,5.6,1.6,0.9,5.8,4.1,3.6,3.5,3.1,3.8]*10^3               # Wind_bus_23
-IBG₂₆=[9.3,10.1,7.2,7.5,7.9,6.4,7.1,6.9,5.6,5.4,5.2,4,3.8,3,2.8,3.2,2.5,1.1,2.1,2.9,2.7,3,4.6,5.5]*10^3            # Wind_bus_26
-
+#-----------------------------------Define Parameters for Optimization-----------------------------------        # Wind_bus_1
 Load_total=[18.42,17.95,18.29,18.51,18.13,17.88,19.46,21.97,23.17,23.87,
-23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^3*2   # (MW)
+23.91,23.77,23.80,23.82,24.23,23.79,26.01,26.91,25.26,23.69,22.12,20.04,18.17,18.01]*10^3/3.5   # (MW)
 T=length(Load_total)
 
-Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^3     #   Max generation of SGs                    SGs, buses:2,3,4,5,27,30
-Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^3      #   Min generation of SGs                   SGs, buses:2,3,4,5,27,30
-Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^3        #   Ramp limits of SGs                      SGs, buses:2,3,4,5,27,30
-Kˢᵗ=[4000, 325, 142.5, 72, 55, 31]*10^3                     #   Startup cost of SGs                     SGs, buses:2,3,4,5,27,30
-Kˢʰ=[800, 28.5, 18.5, 14.4, 12, 10]*10^3                    #   Shutdown cost of SGs                    SGs, buses:2,3,4,5,27,30
-Oᵐ₁=[6.20, 32.10, 36.47, 64.28, 84.53, 97.36]               #   Marginal generation cost of SG 1  in    SGs, buses:2,3,4,5,27,30
-Oᵐ₂=[7.07, 34.72, 38.49, 72.84, 93.60, 105.02]              #   Marginal generation cost of SG 2  in    SGs, buses:2,3,4,5,27,30
-Oⁿˡ=[18.431, 17.005, 13.755, 9.930, 9.900, 8.570]*10^3      #   No-load cost of SGs                     SGs, buses:2,3,4,5,27,30
+IBG₁=250*ones(T,1)   
+IBG₂₃=250*ones(T,1)
+IBG₂₆=250*ones(T,1)
+
+b=Load_total-IBG₁-IBG₂₃-IBG₂₆  # check the load balance, the result should be 0
+(sum(IBG₁)+sum(IBG₂₃)+sum(IBG₂₆) )/sum(Load_total)
+
+Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^3/5     #   Max generation of SGs                    SGs, buses:2,3,4,5,27,30
+Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^3/5      #   Min generation of SGs                   SGs, buses:2,3,4,5,27,30
+Rₘₐₓ=[1.317, 1.152, 1.512, 1.334, 1.951, 1.728]*10^3/5        #   Ramp limits of SGs                      SGs, buses:2,3,4,5,27,30
+Kˢᵗ=[200, 125, 92.5, 72, 55, 31]*10^3                     #   Startup cost of SGs                     SGs, buses:2,3,4,5,27,30
+Kˢʰ=[50, 28.5, 18.5, 14.4, 12, 10]*10^3                    #   Shutdown cost of SGs                    SGs, buses:2,3,4,5,27,30
+Oᵐ₁=[6.20, 7.10, 10.47, 12.28, 13.53, 15.36]               #   Marginal generation cost of SG 1  in    SGs, buses:2,3,4,5,27,30
+Oᵐ₂=[7.07, 8.72, 11.49, 12.84, 14.60, 15.02]              #   Marginal generation cost of SG 2  in    SGs, buses:2,3,4,5,27,30
+Oⁿˡ=[17.431, 15.005, 13.755, 10.930, 9.900, 8.570]*10^3      #   No-load cost of SGs                     SGs, buses:2,3,4,5,27,30
 Oᴱ_c=[2.46 3.19 2.86]                                       #   Price offer of SGs                      IBRs, buses:1,23,26
-P_g₀=[5.268 4.608 3.025 2.668 2.602 0]*10^3                 #   Initial generation (t=0) of SGs         SGs, buses:2,3,4,5,27,30
-yˢᴳ₀=[1 1 1 1 1 0]                                          #   Initial on/off status (t=0) of SGs      SGs, buses:2,3,4,5,27,30
+P_g₀=[5.268 4.608 3.025 2.668 2.602 0]*10^3/5                 #   Initial generation (t=0) of SGs         SGs, buses:2,3,4,5,27,30
+yˢᴳ₀=[1 1 1 1 1 0]   
 
-kᵐᵐᵃˣ= 2                                                 # Bidding variable upper bound
-
+kᵐᵐᵃˣ= 3                                                 # Bidding variable_energy upper bound
+kᴬˢᵐᵃˣ= 2                                                 # Bidding variable_AS upper bound
 
 
 #-----------------------------------Define Primal-Dual Model-----------------------------------
 model= Model()
 #-------Define Primal Variales
-@variable(model, kᵐ[1:T])          # bidding variable of UL, 2 SGs are strategic let's say
+@variable(model, kᵐ_1[1:T])      
+@variable(model, kᵐ_2[1:T])     
+@variable(model, kᴬˢ_26_g1[1:T]) 
+@variable(model, kᴬˢ_26_g2[1:T]) 
+@variable(model, kᴬˢ_29_g1[1:T])
+@variable(model, kᴬˢ_29_g2[1:T])
+@variable(model, kᴬˢ_30_g1[1:T])
+@variable(model, kᴬˢ_30_g2[1:T])
 
 @variable(model, Pˢᴳ²_1[1:T])        # generation of SGs , buses:2,3,4,5,27,30.  Include strategic and competitive players
 @variable(model, Pˢᴳ²_2[1:T])  
@@ -222,8 +236,22 @@ model= Model()
 
 
 #-------Define Primal Constraints
-@constraint(model, kᵐ.>=1)            # assume there are 2 strategic SGs
-@constraint(model, kᵐ.<=kᵐᵐᵃˣ)
+@constraint(model, kᵐ_1.>=1)                 # bound for bidding decicions: energy
+@constraint(model, kᵐ_1.<=kᵐᵐᵃˣ)
+@constraint(model, kᵐ_2.>=1)            
+@constraint(model, kᵐ_2.<=kᵐᵐᵃˣ)
+@constraint(model, kᴬˢ_26_g1.>=1)               # bound for bidding decicions: AS
+@constraint(model, kᴬˢ_26_g1.<=kᴬˢᵐᵃˣ)
+@constraint(model, kᴬˢ_26_g2.>=1)            
+@constraint(model, kᴬˢ_26_g2.<=kᴬˢᵐᵃˣ)
+@constraint(model, kᴬˢ_29_g1.>=1)            
+@constraint(model, kᴬˢ_29_g1.<=kᴬˢᵐᵃˣ)
+@constraint(model, kᴬˢ_29_g2.>=1)            
+@constraint(model, kᴬˢ_29_g2.<=kᴬˢᵐᵃˣ)
+@constraint(model, kᴬˢ_30_g1.>=1)            
+@constraint(model, kᴬˢ_30_g1.<=kᴬˢᵐᵃˣ)
+@constraint(model, kᴬˢ_30_g2.>=1)            
+@constraint(model, kᴬˢ_30_g2.<=kᴬˢᵐᵃˣ)
 
 @constraint(model, Pˢᴳ²_1+Pˢᴳ²_2+Pˢᴳ³_1+Pˢᴳ³_2+Pˢᴳ⁴_1+Pˢᴳ⁴_2+Pˢᴳ⁵_1+Pˢᴳ⁵_2+Pˢᴳ²⁷_1+Pˢᴳ²⁷_2+Pˢᴳ³⁰_1+Pˢᴳ³⁰_2+
                    Pᴵᴮᴳ¹+Pᴵᴮᴳ²³+Pᴵᴮᴳ²⁶==Load_total)     # power balance , dual variable: λᴱₜ
@@ -422,9 +450,9 @@ end
 #-------Define Dual Constraints   
 n=1    # for bus 26
 k=26
-@constraint(model, Oⁿˡ[1] +A[T,1] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
-@constraint(model, Oⁿˡ[1] +A[T,4] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
-@constraint(model, Oⁿˡ[2] +A[T,7]-K_g[3,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_1[T] -Kˢʰ[2]*σˢʰˢᴳ³_1[T]+ ψᵐᵃˣˢᴳ³_1[T] >=0)
+@constraint(model, Oⁿˡ[1] +kᴬˢ_26_g1[T]*A[T,1] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
+@constraint(model, Oⁿˡ[1] +kᴬˢ_26_g2[T]*A[T,4] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
+@constraint(model, Oⁿˡ[2] +A[T,7] -K_g[3,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_1[T] -Kˢʰ[2]*σˢʰˢᴳ³_1[T]+ ψᵐᵃˣˢᴳ³_1[T] >=0)
 @constraint(model, Oⁿˡ[2] +A[T,10] -K_g[4,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_2[T] -Kˢʰ[2]*σˢʰˢᴳ³_2[T]+ ψᵐᵃˣˢᴳ³_2[T] >=0)
 @constraint(model, Oⁿˡ[3] +A[T,13] -K_g[5,k]*λ_F[n,T] -Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[T] +Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[T] +Kˢᵗ[3]*σˢᵗˢᴳ⁴_1[T] -Kˢʰ[3]*σˢʰˢᴳ⁴_1[T]+ ψᵐᵃˣˢᴳ⁴_1[T] >=0)
 @constraint(model, Oⁿˡ[3] +A[T,16] -K_g[6,k]*λ_F[n,T] -Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_2[T] +Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_2[T] +Kˢᵗ[3]*σˢᵗˢᴳ⁴_2[T] -Kˢʰ[3]*σˢʰˢᴳ⁴_2[T]+ ψᵐᵃˣˢᴳ⁴_2[T] >=0)
@@ -435,8 +463,8 @@ k=26
 @constraint(model, Oⁿˡ[6] +A[T,31] -K_g[11,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_1[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_1[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_1[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_1[T]+ ψᵐᵃˣˢᴳ³⁰_1[T] >=0)
 @constraint(model, Oⁿˡ[6] +A[T,34] -K_g[12,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_2[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_2[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_2[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_2[T]+ ψᵐᵃˣˢᴳ³⁰_2[T] >=0)
 for t in 1:T-1                                                                                                                                                       # dual constraints for UC, when t<=T-1
-    @constraint(model, Oⁿˡ[1] +A[t,1] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
-    @constraint(model, Oⁿˡ[1] +A[t,4] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_26_g1[t]*A[t,1] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_26_g2[t]*A[t,4] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
     @constraint(model, Oⁿˡ[2] +A[t,7] -K_g[3,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_1[t]-σˢᵗˢᴳ³_1[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_1[t+1]-σˢᵗˢᴳ³_1[t])+ ψᵐᵃˣˢᴳ³_1[t] >=0)
     @constraint(model, Oⁿˡ[2] +A[t,10] -K_g[4,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_2[t]-σˢᵗˢᴳ³_2[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_2[t+1]-σˢᵗˢᴳ³_2[t])+ ψᵐᵃˣˢᴳ³_2[t] >=0)
     @constraint(model, Oⁿˡ[3] +A[t,13] -K_g[5,k]*λ_F[n,t] - Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[t]+ Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[t]+ Kˢᵗ[3]*(σˢᵗˢᴳ⁴_1[t]-σˢᵗˢᴳ⁴_1[t+1])+ Kˢʰ[3]*(σˢᵗˢᴳ⁴_1[t+1]-σˢᵗˢᴳ⁴_1[t])+ ψᵐᵃˣˢᴳ⁴_1[t] >=0)
@@ -452,8 +480,8 @@ end
 n=2    # for bus 29
 k=29
 #-------Define Dual Constraints   
-@constraint(model, Oⁿˡ[1] +A[T,2] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
-@constraint(model, Oⁿˡ[1] +A[T,5] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
+@constraint(model, Oⁿˡ[1] +kᴬˢ_29_g1[T]*A[T,2] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
+@constraint(model, Oⁿˡ[1] +kᴬˢ_29_g2[T]*A[T,5] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
 @constraint(model, Oⁿˡ[2] +A[T,8] -K_g[3,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_1[T] -Kˢʰ[2]*σˢʰˢᴳ³_1[T]+ ψᵐᵃˣˢᴳ³_1[T] >=0)
 @constraint(model, Oⁿˡ[2] +A[T,11] -K_g[4,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_2[T] -Kˢʰ[2]*σˢʰˢᴳ³_2[T]+ ψᵐᵃˣˢᴳ³_2[T] >=0)
 @constraint(model, Oⁿˡ[3] +A[T,14] -K_g[5,k]*λ_F[n,T] -Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[T] +Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[T] +Kˢᵗ[3]*σˢᵗˢᴳ⁴_1[T] -Kˢʰ[3]*σˢʰˢᴳ⁴_1[T]+ ψᵐᵃˣˢᴳ⁴_1[T] >=0)
@@ -465,8 +493,8 @@ k=29
 @constraint(model, Oⁿˡ[6] +A[T,32] -K_g[11,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_1[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_1[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_1[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_1[T]+ ψᵐᵃˣˢᴳ³⁰_1[T] >=0)
 @constraint(model, Oⁿˡ[6] +A[T,35] -K_g[12,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_2[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_2[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_2[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_2[T]+ ψᵐᵃˣˢᴳ³⁰_2[T] >=0)
 for t in 1:T-1                                                                                                                                                       # dual constraints for UC, when t<=T-1
-    @constraint(model, Oⁿˡ[1] +A[t,2] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
-    @constraint(model, Oⁿˡ[1] +A[t,5] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_29_g1[t]*A[t,2] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_29_g2[t]*A[t,5] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
     @constraint(model, Oⁿˡ[2] +A[t,8] -K_g[3,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_1[t]-σˢᵗˢᴳ³_1[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_1[t+1]-σˢᵗˢᴳ³_1[t])+ ψᵐᵃˣˢᴳ³_1[t] >=0)
     @constraint(model, Oⁿˡ[2] +A[t,11] -K_g[4,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_2[t]-σˢᵗˢᴳ³_2[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_2[t+1]-σˢᵗˢᴳ³_2[t])+ ψᵐᵃˣˢᴳ³_2[t] >=0)
     @constraint(model, Oⁿˡ[3] +A[t,14] -K_g[5,k]*λ_F[n,t] - Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[t]+ Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[t]+ Kˢᵗ[3]*(σˢᵗˢᴳ⁴_1[t]-σˢᵗˢᴳ⁴_1[t+1])+ Kˢʰ[3]*(σˢᵗˢᴳ⁴_1[t+1]-σˢᵗˢᴳ⁴_1[t])+ ψᵐᵃˣˢᴳ⁴_1[t] >=0)
@@ -482,8 +510,8 @@ end
 n=3    # for bus 30
 k=30
 #-------Define Dual Constraints   
-@constraint(model, Oⁿˡ[1] +A[T,3] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
-@constraint(model, Oⁿˡ[1] +A[T,6] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
+@constraint(model, Oⁿˡ[1] +kᴬˢ_30_g1[T]*A[T,3] -K_g[1,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_1[T] -Kˢʰ[1]*σˢʰˢᴳ²_1[T]+ ψᵐᵃˣˢᴳ²_1[T] >=0)             # dual constraints for UC, when t==T
+@constraint(model, Oⁿˡ[1] +kᴬˢ_30_g2[T]*A[T,6] -K_g[2,k]*λ_F[n,T] -Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[T] +Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[T] +Kˢᵗ[1]*σˢᵗˢᴳ²_2[T] -Kˢʰ[1]*σˢʰˢᴳ²_2[T]+ ψᵐᵃˣˢᴳ²_2[T] >=0)
 @constraint(model, Oⁿˡ[2] +A[T,9] -K_g[3,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_1[T] -Kˢʰ[2]*σˢʰˢᴳ³_1[T]+ ψᵐᵃˣˢᴳ³_1[T] >=0)
 @constraint(model, Oⁿˡ[2] +A[T,12] -K_g[4,k]*λ_F[n,T] -Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[T] +Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[T] +Kˢᵗ[2]*σˢᵗˢᴳ³_2[T] -Kˢʰ[2]*σˢʰˢᴳ³_2[T]+ ψᵐᵃˣˢᴳ³_2[T] >=0)
 @constraint(model, Oⁿˡ[3] +A[T,15] -K_g[5,k]*λ_F[n,T] -Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[T] +Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[T] +Kˢᵗ[3]*σˢᵗˢᴳ⁴_1[T] -Kˢʰ[3]*σˢʰˢᴳ⁴_1[T]+ ψᵐᵃˣˢᴳ⁴_1[T] >=0)
@@ -495,8 +523,8 @@ k=30
 @constraint(model, Oⁿˡ[6] +A[T,33] -K_g[11,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_1[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_1[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_1[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_1[T]+ ψᵐᵃˣˢᴳ³⁰_1[T] >=0)
 @constraint(model, Oⁿˡ[6] +A[T,36] -K_g[12,k]*λ_F[n,T] -Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_2[T] +Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_2[T] +Kˢᵗ[6]*σˢᵗˢᴳ³⁰_2[T] -Kˢʰ[6]*σˢʰˢᴳ³⁰_2[T]+ ψᵐᵃˣˢᴳ³⁰_2[T] >=0)
 for t in 1:T-1                                                                                                                                                       # dual constraints for UC, when t<=T-1
-    @constraint(model, Oⁿˡ[1] +A[t,3] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
-    @constraint(model, Oⁿˡ[1] +A[t,6] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_30_g1[t]*A[t,3] -K_g[1,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_1[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_1[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_1[t]-σˢᵗˢᴳ²_1[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_1[t+1]-σˢᵗˢᴳ²_1[t])+ ψᵐᵃˣˢᴳ²_1[t] >=0)                
+    @constraint(model, Oⁿˡ[1] +kᴬˢ_30_g2[t]*A[t,6] -K_g[2,k]*λ_F[n,t] - Pˢᴳₘₐₓ[1]*μᵐᵃˣˢᴳ²_2[t]+ Pˢᴳₘᵢₙ[1]*μᵐⁱⁿˢᴳ²_2[t]+ Kˢᵗ[1]*(σˢᵗˢᴳ²_2[t]-σˢᵗˢᴳ²_2[t+1])+ Kˢʰ[1]*(σˢᵗˢᴳ²_2[t+1]-σˢᵗˢᴳ²_2[t])+ ψᵐᵃˣˢᴳ²_2[t] >=0)   
     @constraint(model, Oⁿˡ[2] +A[t,9] -K_g[3,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_1[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_1[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_1[t]-σˢᵗˢᴳ³_1[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_1[t+1]-σˢᵗˢᴳ³_1[t])+ ψᵐᵃˣˢᴳ³_1[t] >=0)
     @constraint(model, Oⁿˡ[2] +A[t,12] -K_g[4,k]*λ_F[n,t] - Pˢᴳₘₐₓ[2]*μᵐᵃˣˢᴳ³_2[t]+ Pˢᴳₘᵢₙ[2]*μᵐⁱⁿˢᴳ³_2[t]+ Kˢᵗ[2]*(σˢᵗˢᴳ³_2[t]-σˢᵗˢᴳ³_2[t+1])+ Kˢʰ[2]*(σˢᵗˢᴳ³_2[t+1]-σˢᵗˢᴳ³_2[t])+ ψᵐᵃˣˢᴳ³_2[t] >=0)
     @constraint(model, Oⁿˡ[3] +A[t,15] -K_g[5,k]*λ_F[n,t] - Pˢᴳₘₐₓ[3]*μᵐᵃˣˢᴳ⁴_1[t]+ Pˢᴳₘᵢₙ[3]*μᵐⁱⁿˢᴳ⁴_1[t]+ Kˢᵗ[3]*(σˢᵗˢᴳ⁴_1[t]-σˢᵗˢᴳ⁴_1[t+1])+ Kˢʰ[3]*(σˢᵗˢᴳ⁴_1[t+1]-σˢᵗˢᴳ⁴_1[t])+ ψᵐᵃˣˢᴳ⁴_1[t] >=0)
@@ -509,8 +537,8 @@ for t in 1:T-1                                                                  
     @constraint(model, Oⁿˡ[6] +A[t,36] -K_g[12,k]*λ_F[n,t] - Pˢᴳₘₐₓ[6]*μᵐᵃˣˢᴳ³⁰_2[t]+ Pˢᴳₘᵢₙ[6]*μᵐⁱⁿˢᴳ³⁰_2[t]+ Kˢᵗ[6]*(σˢᵗˢᴳ³⁰_2[t]-σˢᵗˢᴳ³⁰_2[t+1])+ Kˢʰ[6]*(σˢᵗˢᴳ³⁰_2[t+1]-σˢᵗˢᴳ³⁰_2[t])+ ψᵐᵃˣˢᴳ³⁰_2[t] >=0)          
 end
 
-@constraint(model, Oᵐ₁[1]*kᵐ[T] -λᴱ[T] +μᵐᵃˣˢᴳ²_1[T] -μᵐⁱⁿˢᴳ²_1[T] +πʳᵘˢᴳ²_1[T] -πʳᵈˢᴳ²_1[T]>=0)          # dual constraints for generation, when t==T, assume SGs in bus 2 are strategic
-@constraint(model, Oᵐ₂[1]*kᵐ[T] -λᴱ[T] +μᵐᵃˣˢᴳ²_2[T] -μᵐⁱⁿˢᴳ²_2[T] +πʳᵘˢᴳ²_2[T] -πʳᵈˢᴳ²_2[T]>=0)
+@constraint(model, Oᵐ₁[1]*kᵐ_1[T] -λᴱ[T] +μᵐᵃˣˢᴳ²_1[T] -μᵐⁱⁿˢᴳ²_1[T] +πʳᵘˢᴳ²_1[T] -πʳᵈˢᴳ²_1[T]>=0)          # dual constraints for generation, when t==T, assume SGs in bus 2 are strategic
+@constraint(model, Oᵐ₂[1]*kᵐ_2[T] -λᴱ[T] +μᵐᵃˣˢᴳ²_2[T] -μᵐⁱⁿˢᴳ²_2[T] +πʳᵘˢᴳ²_2[T] -πʳᵈˢᴳ²_2[T]>=0)
 @constraint(model, Oᵐ₁[2] -λᴱ[T] +μᵐᵃˣˢᴳ³_1[T] -μᵐⁱⁿˢᴳ³_1[T] +πʳᵘˢᴳ³_1[T] -πʳᵈˢᴳ³_1[T]>=0)
 @constraint(model, Oᵐ₂[2] -λᴱ[T] +μᵐᵃˣˢᴳ³_2[T] -μᵐⁱⁿˢᴳ³_2[T] +πʳᵘˢᴳ³_2[T] -πʳᵈˢᴳ³_2[T]>=0)
 @constraint(model, Oᵐ₁[3] -λᴱ[T] +μᵐᵃˣˢᴳ⁴_1[T] -μᵐⁱⁿˢᴳ⁴_1[T] +πʳᵘˢᴳ⁴_1[T] -πʳᵈˢᴳ⁴_1[T]>=0)
@@ -522,8 +550,8 @@ end
 @constraint(model, Oᵐ₁[6] -λᴱ[T] +μᵐᵃˣˢᴳ³⁰_1[T] -μᵐⁱⁿˢᴳ³⁰_1[T] +πʳᵘˢᴳ³⁰_1[T] -πʳᵈˢᴳ³⁰_1[T]>=0)
 @constraint(model, Oᵐ₂[6] -λᴱ[T] +μᵐᵃˣˢᴳ³⁰_2[T] -μᵐⁱⁿˢᴳ³⁰_2[T] +πʳᵘˢᴳ³⁰_2[T] -πʳᵈˢᴳ³⁰_2[T]>=0)
 for t in 1:T-1                                                                                                  # dual constraints for generation, when t<=T-1, assume SGs in bus 2 are strategic
-    @constraint(model, Oᵐ₁[1]*kᵐ[t] -λᴱ[t] +μᵐᵃˣˢᴳ²_1[t] -μᵐⁱⁿˢᴳ²_1[t] +πʳᵘˢᴳ²_1[t] -πʳᵘˢᴳ²_1[t+1] -πʳᵈˢᴳ²_1[t] +πʳᵈˢᴳ²_1[t+1]>=0)                
-    @constraint(model, Oᵐ₂[1]*kᵐ[t] -λᴱ[t] +μᵐᵃˣˢᴳ²_2[t] -μᵐⁱⁿˢᴳ²_2[t] +πʳᵘˢᴳ²_2[t] -πʳᵘˢᴳ²_2[t+1] -πʳᵈˢᴳ²_2[t] +πʳᵈˢᴳ²_2[t+1]>=0)
+    @constraint(model, Oᵐ₁[1]*kᵐ_1[t] -λᴱ[t] +μᵐᵃˣˢᴳ²_1[t] -μᵐⁱⁿˢᴳ²_1[t] +πʳᵘˢᴳ²_1[t] -πʳᵘˢᴳ²_1[t+1] -πʳᵈˢᴳ²_1[t] +πʳᵈˢᴳ²_1[t+1]>=0)                
+    @constraint(model, Oᵐ₂[1]*kᵐ_2[t] -λᴱ[t] +μᵐᵃˣˢᴳ²_2[t] -μᵐⁱⁿˢᴳ²_2[t] +πʳᵘˢᴳ²_2[t] -πʳᵘˢᴳ²_2[t+1] -πʳᵈˢᴳ²_2[t] +πʳᵈˢᴳ²_2[t+1]>=0)
     @constraint(model, Oᵐ₁[2] -λᴱ[t] +μᵐᵃˣˢᴳ³_1[t] -μᵐⁱⁿˢᴳ³_1[t] +πʳᵘˢᴳ³_1[t] -πʳᵘˢᴳ³_1[t+1] -πʳᵈˢᴳ³_1[t] +πʳᵈˢᴳ³_1[t+1]>=0)                
     @constraint(model, Oᵐ₂[2] -λᴱ[t] +μᵐᵃˣˢᴳ³_2[t] -μᵐⁱⁿˢᴳ³_2[t] +πʳᵘˢᴳ³_2[t] -πʳᵘˢᴳ³_2[t+1] -πʳᵈˢᴳ³_2[t] +πʳᵈˢᴳ³_2[t+1]>=0)
     @constraint(model, Oᵐ₁[3] -λᴱ[t] +μᵐᵃˣˢᴳ⁴_1[t] -μᵐⁱⁿˢᴳ⁴_1[t] +πʳᵘˢᴳ⁴_1[t] -πʳᵘˢᴳ⁴_1[t+1] -πʳᵈˢᴳ⁴_1[t] +πʳᵈˢᴳ⁴_1[t+1]>=0)
@@ -591,34 +619,36 @@ end
 
 
 #-------Define Objective Functions with binary expansion
-@variable(model, z₁[1:T])    # define auxiliary variables of McCormick envelopes
-@variable(model, z₂[1:T])
-@variable(model, z₃[1:T])
-@variable(model, z₄[1:T])
+@variable(model, z_Re_E_g1[1:T])    # define auxiliary variables of McCormick envelopes
+@variable(model, z_Re_E_g2[1:T])
+@variable(model, z_Bid_E_g1[1:T])
+@variable(model, z_Bid_E_g2[1:T])
 
 M_λ=kᵐᵐᵃˣ*Oᵐ₂[5]
 
 for t in 1:T
 
-    @constraint(model, z₁[t]>=λᴱ[t]*Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₁[t]>=M_λ*Pˢᴳ²_1[t]   +Pˢᴳₘₐₓ[1]*(λᴱ[t]-M_λ) )
-    @constraint(model, z₁[t]<=λᴱ[t]*Pˢᴳₘₐₓ[1])
-    @constraint(model, z₁[t]<=M_λ*Pˢᴳ²_1[t]   +Pˢᴳₘᵢₙ[1]*(λᴱ[t]-M_λ)  )
+    @constraint(model, z_Re_E_g1[t]>=λᴱ[t]*Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Re_E_g1[t]>=M_λ*Pˢᴳ²_1[t]   +Pˢᴳₘₐₓ[1]*(λᴱ[t]-M_λ) )
+    @constraint(model, z_Re_E_g1[t]<=λᴱ[t]*Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Re_E_g1[t]<=M_λ*Pˢᴳ²_1[t]   +Pˢᴳₘᵢₙ[1]*(λᴱ[t]-M_λ)  )
     
-    @constraint(model, z₂[t]>=λᴱ[t]*Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₂[t]>=M_λ*Pˢᴳ²_2[t]   +Pˢᴳₘₐₓ[1]*(λᴱ[t]-M_λ) )
-    @constraint(model, z₂[t]<=λᴱ[t]*Pˢᴳₘₐₓ[1])
-    @constraint(model, z₂[t]<=M_λ*Pˢᴳ²_2[t]   +Pˢᴳₘᵢₙ[1]*(λᴱ[t]-M_λ)  )
+    @constraint(model, z_Re_E_g2[t]>=λᴱ[t]*Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Re_E_g2[t]>=M_λ*Pˢᴳ²_2[t]   +Pˢᴳₘₐₓ[1]*(λᴱ[t]-M_λ) )
+    @constraint(model, z_Re_E_g2[t]<=λᴱ[t]*Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Re_E_g2[t]<=M_λ*Pˢᴳ²_2[t]   +Pˢᴳₘᵢₙ[1]*(λᴱ[t]-M_λ)  )
 
-    @constraint(model, z₃[t]>=Pˢᴳ²_1[t]+kᵐ[t]*Pˢᴳₘᵢₙ[1]-Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₃[t]>=kᵐᵐᵃˣ*Pˢᴳ²_1[t]+kᵐ[t]*Pˢᴳₘₐₓ[1]-kᵐᵐᵃˣ*Pˢᴳₘₐₓ[1])
-    @constraint(model, z₃[t]<=kᵐᵐᵃˣ*Pˢᴳ²_1[t]+kᵐ[t]*Pˢᴳₘᵢₙ[1]-kᵐᵐᵃˣ*Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₃[t]<=Pˢᴳ²_1[t]+kᵐ[t]*Pˢᴳₘₐₓ[1]-Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Bid_E_g1[t]>=Pˢᴳ²_1[t]+kᵐ_1[t]*Pˢᴳₘᵢₙ[1]-Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Bid_E_g1[t]>=kᵐᵐᵃˣ*Pˢᴳ²_1[t]+kᵐ_1[t]*Pˢᴳₘₐₓ[1]-kᵐᵐᵃˣ*Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Bid_E_g1[t]<=kᵐᵐᵃˣ*Pˢᴳ²_1[t]+kᵐ_1[t]*Pˢᴳₘᵢₙ[1]-kᵐᵐᵃˣ*Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Bid_E_g1[t]<=Pˢᴳ²_1[t]+kᵐ_1[t]*Pˢᴳₘₐₓ[1]-Pˢᴳₘₐₓ[1])
 
-    @constraint(model, z₄[t]>=Pˢᴳ²_2[t]+kᵐ[t]*Pˢᴳₘᵢₙ[1]-Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₄[t]>=kᵐᵐᵃˣ*Pˢᴳ²_2[t]+kᵐ[t]*Pˢᴳₘₐₓ[1]-kᵐᵐᵃˣ*Pˢᴳₘₐₓ[1])
-    @constraint(model, z₄[t]<=kᵐᵐᵃˣ*Pˢᴳ²_2[t]+kᵐ[t]*Pˢᴳₘᵢₙ[1]-kᵐᵐᵃˣ*Pˢᴳₘᵢₙ[1])
-    @constraint(model, z₄[t]<=Pˢᴳ²_2[t]+kᵐ[t]*Pˢᴳₘₐₓ[1]-Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Bid_E_g2[t]>=Pˢᴳ²_2[t]+kᵐ_2[t]*Pˢᴳₘᵢₙ[1]-Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Bid_E_g2[t]>=kᵐᵐᵃˣ*Pˢᴳ²_2[t]+kᵐ_2[t]*Pˢᴳₘₐₓ[1]-kᵐᵐᵃˣ*Pˢᴳₘₐₓ[1])
+    @constraint(model, z_Bid_E_g2[t]<=kᵐᵐᵃˣ*Pˢᴳ²_2[t]+kᵐ_2[t]*Pˢᴳₘᵢₙ[1]-kᵐᵐᵃˣ*Pˢᴳₘᵢₙ[1])
+    @constraint(model, z_Bid_E_g2[t]<=Pˢᴳ²_2[t]+kᵐ_2[t]*Pˢᴳₘₐₓ[1]-Pˢᴳₘₐₓ[1])
+
+
 end
 
 M_F_26=zeros(1,T)
@@ -630,54 +660,104 @@ for t in 1:T
     M_F_30[1,t]=maximum([A[t,3],A[t,6],A[t,9],A[t,12],A[t,15],A[t,18],A[t,21],A[t,24],A[t,27],A[t,30],A[t,33],A[t,36]])
 end
 
-@variable(model, z_5[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 26
-@variable(model, z_6[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 26
-@variable(model, z_7[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 29
-@variable(model, z_8[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 29
-@variable(model, z_9[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 30
-@variable(model, z_10[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 30
+@variable(model, z_Re_26_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 26
+@variable(model, z_Re_26_g2[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 26
+@variable(model, z_Re_29_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 29
+@variable(model, z_Re_29_g2[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 29
+@variable(model, z_Re_30_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 30
+@variable(model, z_Re_30_g2[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 30
 for t in 1:T
-    @constraint(model, z_5[t]<=M_F_26[1,t]*yˢᴳ²_1[t])
-    @constraint(model, z_6[t]<=M_F_26[1,t]*yˢᴳ²_2[t])
-    @constraint(model, λ_F[1,t]-M_F_26[1,t]*(1-yˢᴳ²_1[t])<=z_5[t])
-    @constraint(model, λ_F[1,t]-M_F_26[1,t]*(1-yˢᴳ²_2[t])<=z_6[t])
-    @constraint(model, z_5[t]<=λ_F[1,t])
-    @constraint(model, z_6[t]<=λ_F[1,t])
+    @constraint(model, z_Re_26_g1[t]<=M_F_26[1,t]*yˢᴳ²_1[t])
+    @constraint(model, z_Re_26_g2[t]<=M_F_26[1,t]*yˢᴳ²_2[t])
+    @constraint(model, λ_F[1,t]-M_F_26[1,t]*(1-yˢᴳ²_1[t])<=z_Re_26_g1[t])
+    @constraint(model, λ_F[1,t]-M_F_26[1,t]*(1-yˢᴳ²_2[t])<=z_Re_26_g2[t])
+    @constraint(model, z_Re_26_g1[t]<=λ_F[1,t])
+    @constraint(model, z_Re_26_g2[t]<=λ_F[1,t])
 end
 
 for t in 1:T
-    @constraint(model, z_7[t]<=M_F_29[1,t]*yˢᴳ²_1[t])
-    @constraint(model, z_8[t]<=M_F_29[1,t]*yˢᴳ²_2[t])
-    @constraint(model, λ_F[2,t]-M_F_29[1,t]*(1-yˢᴳ²_1[t])<=z_7[t])
-    @constraint(model, λ_F[2,t]-M_F_29[1,t]*(1-yˢᴳ²_2[t])<=z_8[t])
-    @constraint(model, z_7[t]<=λ_F[2,t])
-    @constraint(model, z_8[t]<=λ_F[2,t])
+    @constraint(model, z_Re_29_g1[t]<=M_F_29[1,t]*yˢᴳ²_1[t])
+    @constraint(model, z_Re_29_g2[t]<=M_F_29[1,t]*yˢᴳ²_2[t])
+    @constraint(model, λ_F[2,t]-M_F_29[1,t]*(1-yˢᴳ²_1[t])<=z_Re_29_g1[t])
+    @constraint(model, λ_F[2,t]-M_F_29[1,t]*(1-yˢᴳ²_2[t])<=z_Re_29_g2[t])
+    @constraint(model, z_Re_29_g1[t]<=λ_F[2,t])
+    @constraint(model, z_Re_29_g2[t]<=λ_F[2,t])
 end
 
 for t in 1:T
-    @constraint(model, z_9[t]<=M_F_30[1,t]*yˢᴳ²_1[t])
-    @constraint(model, z_10[t]<=M_F_30[1,t]*yˢᴳ²_2[t])
-    @constraint(model, λ_F[3,t]-M_F_30[1,t]*(1-yˢᴳ²_1[t])<=z_9[t])
-    @constraint(model, λ_F[3,t]-M_F_30[1,t]*(1-yˢᴳ²_2[t])<=z_10[t])
-    @constraint(model, z_9[t]<=λ_F[3,t])
-    @constraint(model, z_10[t]<=λ_F[3,t])
+    @constraint(model, z_Re_30_g1[t]<=M_F_30[1,t]*yˢᴳ²_1[t])
+    @constraint(model, z_Re_30_g2[t]<=M_F_30[1,t]*yˢᴳ²_2[t])
+    @constraint(model, λ_F[3,t]-M_F_30[1,t]*(1-yˢᴳ²_1[t])<=z_Re_30_g1[t])
+    @constraint(model, λ_F[3,t]-M_F_30[1,t]*(1-yˢᴳ²_2[t])<=z_Re_30_g2[t])
+    @constraint(model, z_Re_30_g1[t]<=λ_F[3,t])
+    @constraint(model, z_Re_30_g2[t]<=λ_F[3,t])
 end
 
+@variable(model, z_Bid_26_g1[1:T])    # equal to k_F*y_g, SG 1， bus 26
+@variable(model, z_Bid_26_g2[1:T])    # equal to k_F*y_g, SG 2， bus 26
+@variable(model, z_Bid_29_g1[1:T])    # equal to k_F*y_g, SG 1， bus 29
+@variable(model, z_Bid_29_g2[1:T])    # equal to k_F*y_g, SG 2， bus 29
+@variable(model, z_Bid_30_g1[1:T])    # equal to k_F*y_g, SG 1， bus 30
+@variable(model, z_Bid_30_g2[1:T])    # equal to k_F*y_g, SG 2， bus 30
+
+for t in 1:T
+    @constraint(model, z_Bid_26_g1[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_1[t])
+    @constraint(model, z_Bid_26_g2[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_2[t])
+    @constraint(model, z_Bid_26_g1[t]<=yˢᴳ²_1[t]+kᴬˢ_26_g1[t]-1)
+    @constraint(model, z_Bid_26_g2[t]<=yˢᴳ²_2[t]+kᴬˢ_26_g2[t]-1)
+
+    @constraint(model, z_Bid_26_g1[t]>=yˢᴳ²_1[t])
+    @constraint(model, z_Bid_26_g2[t]>=yˢᴳ²_2[t])
+    @constraint(model, z_Bid_26_g1[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_1[t]-1)+kᴬˢ_26_g1[t])
+    @constraint(model, z_Bid_26_g2[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_2[t]-1)+kᴬˢ_26_g2[t])   
+end
+
+for t in 1:T
+    @constraint(model, z_Bid_29_g1[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_1[t])
+    @constraint(model, z_Bid_29_g2[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_2[t])
+    @constraint(model, z_Bid_29_g1[t]<=yˢᴳ²_1[t]+kᴬˢ_29_g1[t]-1)
+    @constraint(model, z_Bid_29_g2[t]<=yˢᴳ²_2[t]+kᴬˢ_29_g2[t]-1)
+
+    @constraint(model, z_Bid_29_g1[t]>=yˢᴳ²_1[t])
+    @constraint(model, z_Bid_29_g2[t]>=yˢᴳ²_2[t])
+    @constraint(model, z_Bid_29_g1[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_1[t]-1)+kᴬˢ_29_g1[t])
+    @constraint(model, z_Bid_29_g2[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_2[t]-1)+kᴬˢ_29_g2[t])   
+end
+
+for t in 1:T
+    @constraint(model, z_Bid_30_g1[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_1[t])
+    @constraint(model, z_Bid_30_g2[t]<=kᴬˢᵐᵃˣ*yˢᴳ²_2[t])
+    @constraint(model, z_Bid_30_g1[t]<=yˢᴳ²_1[t]+kᴬˢ_30_g1[t]-1)
+    @constraint(model, z_Bid_30_g2[t]<=yˢᴳ²_2[t]+kᴬˢ_30_g2[t]-1)
+
+    @constraint(model, z_Bid_30_g1[t]>=yˢᴳ²_1[t])
+    @constraint(model, z_Bid_30_g2[t]>=yˢᴳ²_2[t])
+    @constraint(model, z_Bid_30_g1[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_1[t]-1)+kᴬˢ_30_g1[t])
+    @constraint(model, z_Bid_30_g2[t]>=kᴬˢᵐᵃˣ*(yˢᴳ²_2[t]-1)+kᴬˢ_30_g2[t])   
+end
+
+
+
+#-------Define Objective Functions 
 cost_nl_UL=sum(Oⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))                       # no-load cost of strategic SGs
 cost_gene_UL=sum(Oᵐ₁[1].*Pˢᴳ²_1+Oᵐ₂[1].*Pˢᴳ²_2)               # generation cost of strategic SGs 
 cost_onoff_UL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ²_2)+sum(Cᴰ²_2)     # on/off cost of strategic SGs
-revenue_energy_UL=sum( z₁ )+sum( z₂ )                   # revenue from market clearing
-revenue_SCL_UL=sum(z_5)+sum(z_6)+sum(z_7)+sum(z_8)+sum(z_9)+sum(z_10)                                     # revenue from commit online to offer AS
+revenue_energy_UL=sum( z_Re_E_g1 )+sum( z_Re_E_g2 )                   # revenue from market clearing
+revenue_SCL_UL=sum(z_Re_26_g1)+sum(z_Re_26_g2)+sum(z_Re_29_g1)+sum(z_Re_29_g2)+sum(z_Re_30_g1)+sum(z_Re_30_g2)                                     # revenue from commit online to offer AS
 obj_UL=revenue_energy_UL +revenue_SCL_UL -cost_nl_UL -cost_gene_UL -cost_onoff_UL    # objective function of UL
-
 
 cost_onoff_LL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
 cost_nl_LL=sum(Oⁿˡ[1].*(yˢᴳ²_1+yˢᴳ²_2))+sum(Oⁿˡ[2].*(yˢᴳ³_1+yˢᴳ³_2))+sum(Oⁿˡ[3].*(yˢᴳ⁴_1+yˢᴳ⁴_2))+sum(Oⁿˡ[4].*(yˢᴳ⁵_1+yˢᴳ⁵_2))+sum(Oⁿˡ[5].*(yˢᴳ²⁷_1+yˢᴳ²⁷_2))+sum(Oⁿˡ[6].*(yˢᴳ³⁰_1+yˢᴳ³⁰_2))    
-cost_gene_LL=Oᵐ₁[1]*sum( z₃ )+Oᵐ₂[1]*sum( z₄ )+sum(Oᵐ₁[2].*Pˢᴳ³_1+Oᵐ₂[2].*Pˢᴳ³_2)+sum(Oᵐ₁[3].*Pˢᴳ⁴_1+Oᵐ₂[3].*Pˢᴳ⁴_2)+sum(Oᵐ₁[4].*Pˢᴳ⁵_1+Oᵐ₂[4].*Pˢᴳ⁵_2)+sum(Oᵐ₁[5].*Pˢᴳ²⁷_1+Oᵐ₂[5].*Pˢᴳ²⁷_2)+sum(Oᵐ₁[6].*Pˢᴳ³⁰_1+Oᵐ₂[6].*Pˢᴳ³⁰_2)   
+cost_gene_LL=Oᵐ₁[1]*sum( z_Bid_E_g1 )+Oᵐ₂[1]*sum( z_Bid_E_g2 )+sum(Oᵐ₁[2].*Pˢᴳ³_1+Oᵐ₂[2].*Pˢᴳ³_2)+sum(Oᵐ₁[3].*Pˢᴳ⁴_1+Oᵐ₂[3].*Pˢᴳ⁴_2)+sum(Oᵐ₁[4].*Pˢᴳ⁵_1+Oᵐ₂[4].*Pˢᴳ⁵_2)+sum(Oᵐ₁[5].*Pˢᴳ²⁷_1+Oᵐ₂[5].*Pˢᴳ²⁷_2)+sum(Oᵐ₁[6].*Pˢᴳ³⁰_1+Oᵐ₂[6].*Pˢᴳ³⁰_2)   
 cost_IBR_LL=sum(Oᴱ_c[1].*Pᴵᴮᴳ¹) +sum(Oᴱ_c[2].*Pᴵᴮᴳ²³) +sum(Oᴱ_c[3].*Pᴵᴮᴳ²⁶)
 
-cost_AS=sum(A[:,1].*yˢᴳ²_1 +A[:,2].*yˢᴳ²_1 +A[:,3].*yˢᴳ²_1 +A[:,4].*yˢᴳ²_2 +A[:,5].*yˢᴳ²_2 +A[:,6].*yˢᴳ²_2 +A[:,7].*yˢᴳ³_1 +A[:,8].*yˢᴳ³_1 +A[:,9].*yˢᴳ³_1 +A[:,10].*yˢᴳ³_2 +A[:,11].*yˢᴳ³_2 +A[:,12].*yˢᴳ³_2 +A[:,13].*yˢᴳ⁴_1 +A[:,14].*yˢᴳ⁴_1 +A[:,15].*yˢᴳ⁴_1 +A[:,16].*yˢᴳ⁴_2 +A[:,17].*yˢᴳ⁴_2 +A[:,18].*yˢᴳ⁴_2 +A[:,19].*yˢᴳ⁵_1 +A[:,20].*yˢᴳ⁵_1 +A[:,21].*yˢᴳ⁵_1 +A[:,22].*yˢᴳ⁵_2 +A[:,23].*yˢᴳ⁵_2 +A[:,24].*yˢᴳ⁵_2 +A[:,25].*yˢᴳ²⁷_1 +A[:,26].*yˢᴳ²⁷_1 +A[:,27].*yˢᴳ²⁷_1 +A[:,28].*yˢᴳ²⁷_2 +A[:,29].*yˢᴳ²⁷_2 +A[:,30].*yˢᴳ²⁷_2)
-cost_AS=cost_AS+sum(A[:,31].*yˢᴳ³⁰_1 +A[:,32].*yˢᴳ³⁰_1 +A[:,33].*yˢᴳ³⁰_1 +A[:,34].*yˢᴳ³⁰_2 +A[:,35].*yˢᴳ³⁰_2 +A[:,36].*yˢᴳ³⁰_2)
+cost_AS_stra= sum(A[:,1].*z_Bid_26_g1 +A[:,2].*z_Bid_29_g1 +A[:,3].*z_Bid_30_g1 + A[:,4].*z_Bid_26_g2 +A[:,5].*z_Bid_29_g2 +A[:,6].*z_Bid_30_g2 )
+
+cost_AS_non_stra=sum(A[:,7].*yˢᴳ³_1+A[:,8].*yˢᴳ³_1 +A[:,9].*yˢᴳ³_1 +A[:,10].*yˢᴳ³_2 +A[:,11].*yˢᴳ³_2 +A[:,12].*yˢᴳ³_2 +A[:,13].*yˢᴳ⁴_1 
++A[:,14].*yˢᴳ⁴_1 +A[:,15].*yˢᴳ⁴_1 +A[:,16].*yˢᴳ⁴_2 +A[:,17].*yˢᴳ⁴_2 +A[:,18].*yˢᴳ⁴_2 +A[:,19].*yˢᴳ⁵_1 +A[:,20].*yˢᴳ⁵_1 +A[:,21].*yˢᴳ⁵_1 
++A[:,22].*yˢᴳ⁵_2 +A[:,23].*yˢᴳ⁵_2 +A[:,24].*yˢᴳ⁵_2 +A[:,25].*yˢᴳ²⁷_1 +A[:,26].*yˢᴳ²⁷_1 +A[:,27].*yˢᴳ²⁷_1 +A[:,28].*yˢᴳ²⁷_2 
++A[:,29].*yˢᴳ²⁷_2 +A[:,30].*yˢᴳ²⁷_2+A[:,31].*yˢᴳ³⁰_1 +A[:,32].*yˢᴳ³⁰_1 +A[:,33].*yˢᴳ³⁰_1 +A[:,34].*yˢᴳ³⁰_2 +A[:,35].*yˢᴳ³⁰_2 +A[:,36].*yˢᴳ³⁰_2)
+cost_AS=cost_AS_stra+cost_AS_non_stra
 
 obj_LL=cost_onoff_LL+cost_nl_LL+cost_gene_LL+cost_IBR_LL +cost_AS
 
@@ -711,7 +791,7 @@ obj_DLL_comp= sum(obj_DLL_comp_1) + (P_g₀[2]*πʳᵈˢᴳ³_1[1] +P_g₀[2]*π
 
 obj_DLL=sum( obj_DLL_1 ) + obj_DLL_stra +obj_DLL_comp+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
-W=1000
+W=1
 #@constraint(model, obj_LL-obj_DLL>=0)  
 @objective(model, Max, obj_UL-W*(obj_LL-obj_DLL))  # objective function
 #-------Solve and Output Results
@@ -725,7 +805,7 @@ obj_LL=JuMP.value(obj_LL)
 obj_DLL=JuMP.value(obj_DLL)
 DG=obj_LL-obj_DLL
 
-r_DG=DG/obj_DLL*100
+r_DG=DG/obj_LL*100
 
 #-----------economic metrics for strategic one
 revenue_energy_UL=JuMP.value(revenue_energy_UL)
@@ -786,7 +866,7 @@ kᵐ=JuMP.value.(kᵐ)
 I_₂₆=JuMP.value.(I_₂₆)
 I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
-
+plot(λ_F')
 
 cost_onoff_G3_1=sum(Cᵁ³_1)+sum(Cᴰ³_1)   # G3_1
 cost_nl_G3_1=sum(Oⁿˡ[2].*yˢᴳ³_1)   
@@ -941,4 +1021,5 @@ matwrite("costs_G30_1.mat", Dict("costs_G30_1" => costs_G30_1))
 matwrite("revenue_SCL_G30_2.mat", Dict("revenue_SCL_G30_2" => revenue_SCL_G30_2))
 matwrite("revenue_energy_G30_2.mat", Dict("revenue_energy_G30_2" => revenue_energy_G30_2))
 matwrite("costs_G30_2.mat", Dict("costs_G30_2" => costs_G30_2))
+
 
