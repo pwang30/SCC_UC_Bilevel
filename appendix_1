@@ -35,6 +35,35 @@ From Appendix A, we know that for any node $F$, the number of $\eta_m$ is $\lver
 \par
 \endgroup
         \item When $A_i^{(\omega)}=u_{g2,2,t}$,$\forall t$:%, there are $11\times4$ auxiliary equations for $\Gamma_{1,t}$ to $\Gamma_{11,t}$ and $\forall t$:
+
+
+
+
+
+
+exportgraphics(gca, 'figure.pdf', 'ContentType', 'vector', 'BackgroundColor', 'none', 'Resolution', 300)
+
+
+
+fig = openfig('AS_prices.fig', 'invisible');
+ax = findall(fig, 'Type', 'Axes');
+
+% 导出整个图为 PDF
+exportgraphics(fig, 'output.pdf', ...
+    'ContentType', 'vector', ...
+    'BackgroundColor', 'none', ...
+    'Resolution', 300);
+
+h = findobj(gca, 'Type', 'Bar');
+
+data=[I_min_no_cons;I_min_cons;5*ones(1,30)];
+h(3).YData = data(1, :); % 第一类数据
+h(2).YData = data(2, :); % 第二类数据
+h(1).YData = data(3, :); % 第二类数据
+
+
+
+
       \begingroup
 \fontsize{7pt}{8pt}\selectfont
     \begin{subequations} \label{eq:appendix_B_1)}
