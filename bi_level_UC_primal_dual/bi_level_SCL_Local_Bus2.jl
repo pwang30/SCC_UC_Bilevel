@@ -12,7 +12,7 @@ include("admittance_matrix_calculation.jl")
 # SGs, buses:2,3,4,5,27,30    IBRs, buses:1,23,26
 
 matfile = matopen("AS_offer_price.mat")
-A = read(matfile, "SCL_offer_price")  # 指定你要读取的变量名
+A = read(matfile, "SCL_offer_price")  
 close(matfile)
 
 
@@ -788,7 +788,7 @@ obj_DLL_3=  (P_g₀[1]*πʳᵈˢᴳ²_1[1] +P_g₀[1]*πʳᵈˢᴳ²_2[1]) -(P_g
 
 obj_DLL=sum( obj_DLL_1 ) +sum(obj_DLL_2) +obj_DLL_3+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
-W=1000
+W=10
 #@constraint(model, obj_LL-obj_DLL>=0)  
 @objective(model, Max, obj_UL-W*(obj_LL-obj_DLL))  # objective function
 #-------Solve and Output Results
@@ -826,6 +826,7 @@ Pˢᴳ²⁷_1=JuMP.value.(Pˢᴳ²⁷_1)
 Pˢᴳ²⁷_2=JuMP.value.(Pˢᴳ²⁷_2)
 Pˢᴳ³⁰_1=JuMP.value.(Pˢᴳ³⁰_1)
 Pˢᴳ³⁰_2=JuMP.value.(Pˢᴳ³⁰_2)
+
 yˢᴳ³_1=JuMP.value.(yˢᴳ³_1)
 yˢᴳ³_2=JuMP.value.(yˢᴳ³_2)
 yˢᴳ⁴_1=JuMP.value.(yˢᴳ⁴_1)
@@ -870,7 +871,8 @@ kᵐ_2=JuMP.value.(kᵐ_2)
 I_₂₆=JuMP.value.(I_₂₆)
 I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
-bar(kᴬˢ_30_g1)
+plot(kᵐ_1)
+plot!(kᵐ_2)
 
 plot(λ_F[1,:])
 plot!(λ_F[2,:])
@@ -878,6 +880,111 @@ plot!(λ_F[3,:])
 
 plot(kᵐ_1)
 plot!(kᵐ_2)
+
+
+#-----------calculate market power
+λᴱ=JuMP.value.(λᴱ) 
+MP_SCL_SG_21_26=0
+MP_SCL_SG_21_30=0
+MP_SCL_SG_22_26=0
+MP_SCL_SG_22_30=0
+MP_SCL_SG_31_26=0
+MP_SCL_SG_31_30=0
+MP_SCL_SG_32_26=0
+MP_SCL_SG_32_30=0
+MP_SCL_SG_41_26=0
+MP_SCL_SG_41_30=0
+MP_SCL_SG_42_26=0
+MP_SCL_SG_42_30=0
+MP_SCL_SG_51_26=0
+MP_SCL_SG_51_30=0
+MP_SCL_SG_52_26=0
+MP_SCL_SG_52_30=0
+MP_SCL_SG_271_26=0
+MP_SCL_SG_271_30=0
+MP_SCL_SG_272_26=0
+MP_SCL_SG_272_30=0
+for t in 1:T
+    if λ_F[1,t]!=0
+        MP_SCL_SG_21_26=MP_SCL_SG_21_26+1- (A[t,1])/(λ_F[1,t])
+        MP_SCL_SG_22_26=MP_SCL_SG_22_26+1- (A[t,4])/(λ_F[1,t])
+        MP_SCL_SG_31_26=MP_SCL_SG_31_26+1- (A[t,7])/(λ_F[1,t])
+        MP_SCL_SG_32_26=MP_SCL_SG_32_26+1- (A[t,10])/(λ_F[1,t])
+        MP_SCL_SG_41_26=MP_SCL_SG_41_26+1- (A[t,13])/(λ_F[1,t])
+        MP_SCL_SG_42_26=MP_SCL_SG_42_26+1- (A[t,16])/(λ_F[1,t])
+        MP_SCL_SG_51_26=MP_SCL_SG_51_26+1- (A[t,19])/(λ_F[1,t])
+        MP_SCL_SG_52_26=MP_SCL_SG_52_26+1- (A[t,22])/(λ_F[1,t])
+        MP_SCL_SG_271_26=MP_SCL_SG_271_26+1- (A[t,25])/(λ_F[1,t])
+        MP_SCL_SG_272_26=MP_SCL_SG_272_26+1- (A[t,28])/(λ_F[1,t])
+    end
+    if λ_F[3,t]!=0
+        MP_SCL_SG_21_30=MP_SCL_SG_21_30+1- (A[t,3])/(λ_F[3,t])
+        MP_SCL_SG_22_30=MP_SCL_SG_22_30+1- (A[t,6])/(λ_F[3,t])
+        MP_SCL_SG_31_30=MP_SCL_SG_31_30+1- (A[t,9])/(λ_F[3,t])
+        MP_SCL_SG_32_30=MP_SCL_SG_32_30+1- (A[t,12])/(λ_F[3,t])
+        MP_SCL_SG_41_30=MP_SCL_SG_41_30+1- (A[t,15])/(λ_F[3,t])
+        MP_SCL_SG_42_30=MP_SCL_SG_42_30+1- (A[t,18])/(λ_F[3,t])
+        MP_SCL_SG_51_30=MP_SCL_SG_51_30+1- (A[t,21])/(λ_F[3,t])
+        MP_SCL_SG_52_30=MP_SCL_SG_52_30+1- (A[t,24])/(λ_F[3,t])
+        MP_SCL_SG_271_30=MP_SCL_SG_271_30+1- (A[t,27])/(λ_F[3,t])
+        MP_SCL_SG_272_30=MP_SCL_SG_272_30+1- (A[t,30])/(λ_F[3,t])
+
+    end
+end
+
+
+λ_F=JuMP.value.(λ_F) 
+MP_SCL_SG_21_26=0
+MP_SCL_SG_21_30=0
+MP_SCL_SG_22_26=0
+MP_SCL_SG_22_30=0
+MP_SCL_SG_31_26=0
+MP_SCL_SG_31_30=0
+MP_SCL_SG_32_26=0
+MP_SCL_SG_32_30=0
+MP_SCL_SG_41_26=0
+MP_SCL_SG_41_30=0
+MP_SCL_SG_42_26=0
+MP_SCL_SG_42_30=0
+MP_SCL_SG_51_26=0
+MP_SCL_SG_51_30=0
+MP_SCL_SG_52_26=0
+MP_SCL_SG_52_30=0
+MP_SCL_SG_271_26=0
+MP_SCL_SG_271_30=0
+MP_SCL_SG_272_26=0
+MP_SCL_SG_272_30=0
+for t in 1:T
+    if λ_F[1,t]!=0
+        MP_SCL_SG_21_26=MP_SCL_SG_21_26+1- (A[t,1])/(λ_F[1,t])
+        MP_SCL_SG_22_26=MP_SCL_SG_22_26+1- (A[t,4])/(λ_F[1,t])
+        MP_SCL_SG_31_26=MP_SCL_SG_31_26+1- (A[t,7])/(λ_F[1,t])
+        MP_SCL_SG_32_26=MP_SCL_SG_32_26+1- (A[t,10])/(λ_F[1,t])
+        MP_SCL_SG_41_26=MP_SCL_SG_41_26+1- (A[t,13])/(λ_F[1,t])
+        MP_SCL_SG_42_26=MP_SCL_SG_42_26+1- (A[t,16])/(λ_F[1,t])
+        MP_SCL_SG_51_26=MP_SCL_SG_51_26+1- (A[t,19])/(λ_F[1,t])
+        MP_SCL_SG_52_26=MP_SCL_SG_52_26+1- (A[t,22])/(λ_F[1,t])
+        MP_SCL_SG_271_26=MP_SCL_SG_271_26+1- (A[t,25])/(λ_F[1,t])
+        MP_SCL_SG_272_26=MP_SCL_SG_272_26+1- (A[t,28])/(λ_F[1,t])
+    end
+    if λ_F[3,t]!=0
+        MP_SCL_SG_21_30=MP_SCL_SG_21_30+1- (A[t,3])/(λ_F[3,t])
+        MP_SCL_SG_22_30=MP_SCL_SG_22_30+1- (A[t,6])/(λ_F[3,t])
+        MP_SCL_SG_31_30=MP_SCL_SG_31_30+1- (A[t,9])/(λ_F[3,t])
+        MP_SCL_SG_32_30=MP_SCL_SG_32_30+1- (A[t,12])/(λ_F[3,t])
+        MP_SCL_SG_41_30=MP_SCL_SG_41_30+1- (A[t,15])/(λ_F[3,t])
+        MP_SCL_SG_42_30=MP_SCL_SG_42_30+1- (A[t,18])/(λ_F[3,t])
+        MP_SCL_SG_51_30=MP_SCL_SG_51_30+1- (A[t,21])/(λ_F[3,t])
+        MP_SCL_SG_52_30=MP_SCL_SG_52_30+1- (A[t,24])/(λ_F[3,t])
+        MP_SCL_SG_271_30=MP_SCL_SG_271_30+1- (A[t,27])/(λ_F[3,t])
+        MP_SCL_SG_272_30=MP_SCL_SG_272_30+1- (A[t,30])/(λ_F[3,t])
+
+    end
+end
+
+
+
+
 cost_onoff_G3_1=sum(Cᵁ³_1)+sum(Cᴰ³_1)   # G3_1
 cost_nl_G3_1=sum(Oⁿˡ[2].*yˢᴳ³_1)   
 cost_gene_G3_1=sum(Oᵐ₁[2].*Pˢᴳ³_1)
@@ -1031,6 +1138,8 @@ matwrite("costs_G30_1.mat", Dict("costs_G30_1" => costs_G30_1))
 matwrite("revenue_SCL_G30_2.mat", Dict("revenue_SCL_G30_2" => revenue_SCL_G30_2))
 matwrite("revenue_energy_G30_2.mat", Dict("revenue_energy_G30_2" => revenue_energy_G30_2))
 matwrite("costs_G30_2.mat", Dict("costs_G30_2" => costs_G30_2))
+
+
 
 
 
