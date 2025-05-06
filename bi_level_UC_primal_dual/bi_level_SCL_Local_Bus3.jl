@@ -656,9 +656,9 @@ M_F_26=zeros(1,T)
 M_F_29=zeros(1,T)
 M_F_30=zeros(1,T)
 for t in 1:T
-    M_F_26[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,1],A[t,4],A[t,7],A[t,10],A[t,13],A[t,16],A[t,19],A[t,22],A[t,25],A[t,28],A[t,31],A[t,34]])
-    M_F_29[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,2],A[t,5],A[t,8],A[t,11],A[t,14],A[t,17],A[t,20],A[t,23],A[t,26],A[t,29],A[t,32],A[t,35]])
-    M_F_30[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,3],A[t,6],A[t,9],A[t,12],A[t,15],A[t,18],A[t,21],A[t,24],A[t,27],A[t,30],A[t,33],A[t,36]])
+    M_F_26[1,t]=A[t,25]+A[t,28]
+    M_F_29[1,t]=0
+    M_F_30[1,t]=kᴬˢᵐᵃˣ*(A[t,9]+A[t,12])+A[t,3]+A[t,6]+A[t,15]+A[t,18]+A[t,21]+A[t,24]+A[t,27]+A[t,30]
 end
 
 @variable(model, z_Re_26_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 26
@@ -744,7 +744,7 @@ cost_nl_UL=sum(Oⁿˡ[2].*yˢᴳ³_1 ) + sum(Oⁿˡ[2].*yˢᴳ³_2 )            
 cost_gene_UL=sum(Oᵐ₁[2].*Pˢᴳ³_1) + sum(Oᵐ₂[2].*Pˢᴳ³_2)               # generation cost of strategic SGs 
 cost_onoff_UL=sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ³_2)+sum(Cᴰ³_2)     # on/off cost of strategic SGs
 revenue_energy_UL=sum( z_Re_E_g1 )+sum( z_Re_E_g2 )                   # revenue from market clearing
-revenue_SCL_UL=sum(z_Re_26_g1)+sum(z_Re_26_g2)+sum(z_Re_29_g1)+sum(z_Re_29_g2)+sum(z_Re_30_g1)+sum(z_Re_30_g2)                                     # revenue from commit online to offer AS
+revenue_SCL_UL=0*sum(z_Re_26_g1)+0*sum(z_Re_26_g2)+0*sum(z_Re_29_g1)+0*sum(z_Re_29_g2)+0.067*sum(z_Re_30_g1)+0.065*sum(z_Re_30_g2)                                     # revenue from commit online to offer AS
 obj_UL=revenue_energy_UL +revenue_SCL_UL -cost_nl_UL -cost_gene_UL -cost_onoff_UL    # objective function of UL
 
 cost_onoff_LL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
@@ -788,7 +788,7 @@ obj_DLL_3=  (P_g₀[1]*πʳᵈˢᴳ²_1[1] +P_g₀[1]*πʳᵈˢᴳ²_2[1]) -(P_g
 
 obj_DLL=sum( obj_DLL_1 ) +sum(obj_DLL_2) +obj_DLL_3+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
-W=10
+W=100
 #@constraint(model, obj_LL-obj_DLL>=0)  
 @objective(model, Max, obj_UL-W*(obj_LL-obj_DLL))  # objective function
 #-------Solve and Output Results
@@ -862,6 +862,23 @@ kᵐ=JuMP.value.(kᵐ)
 I_₂₆=JuMP.value.(I_₂₆)
 I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
+
+
+
+#-----------calculate market power
+λᴱ=JuMP.value.(λᴱ) 
+MP_SG_2_1=1- Oᵐ₁[1]/(sum(λᴱ)/24)  
+MP_SG_2_2=1- Oᵐ₂[1]/(sum(λᴱ)/24) 
+MP_SG_3_1=1- Oᵐ₁[2]/(sum(λᴱ)/24)  
+MP_SG_3_2=1- Oᵐ₂[2]/(sum(λᴱ)/24) 
+MP_SG_4_1=1- Oᵐ₁[3]/(sum(λᴱ)/24)  
+MP_SG_4_2=1- Oᵐ₂[3]/(sum(λᴱ)/24) 
+MP_SG_5_1=1- Oᵐ₁[4]/(sum(λᴱ)/24)  
+MP_SG_5_2=1- Oᵐ₂[4]/(sum(λᴱ)/24) 
+MP_SG_27_1=1- Oᵐ₁[5]/(sum(λᴱ)/24)  
+MP_SG_27_2=1- Oᵐ₂[5]/(sum(λᴱ)/24) 
+MP_SG_30_1=1- Oᵐ₁[6]/(sum(λᴱ)/24)  
+MP_SG_30_2=1- Oᵐ₂[6]/(sum(λᴱ)/24) 
 
 
 cost_onoff_G2_1=sum(Cᵁ²_1)+sum(Cᴰ²_1)   # G2_1
