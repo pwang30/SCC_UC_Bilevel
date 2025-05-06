@@ -663,6 +663,7 @@ for t in 1:T
     M_F_30[1,t]=kᴬˢᵐᵃˣ*(A[t,3]+A[t,6])+A[t,9]+A[t,12]+A[t,15]+A[t,18]+A[t,21]+A[t,24]+A[t,27]+A[t,30]
 end
 
+
 @variable(model, z_Re_26_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 26
 @variable(model, z_Re_26_g2[1:T]>=0)    # equal to λ_F*y_g, SG 2， bus 26
 @variable(model, z_Re_29_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 29
@@ -790,7 +791,7 @@ obj_DLL_3=  (P_g₀[1]*πʳᵈˢᴳ²_1[1] +P_g₀[1]*πʳᵈˢᴳ²_2[1]) -(P_g
 
 obj_DLL=sum( obj_DLL_1 ) +sum(obj_DLL_2) +obj_DLL_3+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
-W=100
+W=10
 #@constraint(model, obj_LL-obj_DLL>=0)  
 @objective(model, Max, obj_UL-W*(obj_LL-obj_DLL))  # objective function
 #-------Solve and Output Results
@@ -874,7 +875,7 @@ I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
 bar(λᴱ)
 
-plot(I_₂₆)
+plot(kᴬˢ_30_g1)
 plot!(I_₂₉)
 plot!(I_₃₀)
 
@@ -882,7 +883,8 @@ plot!(I_₃₀)
 plot(λ_F[1,:])
 plot!(λ_F[2,:])
 plot!(λ_F[3,:])
-
+plot(M_F_30')
+sum(λ_F[3,:])/24
 plot(kᵐ_1)
 plot!(kᵐ_2)
 
@@ -1039,8 +1041,6 @@ matwrite("costs_G30_1.mat", Dict("costs_G30_1" => costs_G30_1))
 matwrite("revenue_SCL_G30_2.mat", Dict("revenue_SCL_G30_2" => revenue_SCL_G30_2))
 matwrite("revenue_energy_G30_2.mat", Dict("revenue_energy_G30_2" => revenue_energy_G30_2))
 matwrite("costs_G30_2.mat", Dict("costs_G30_2" => costs_G30_2))
-
-
 
 
 
