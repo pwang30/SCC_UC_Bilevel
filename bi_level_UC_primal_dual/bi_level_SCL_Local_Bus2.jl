@@ -12,7 +12,7 @@ include("admittance_matrix_calculation.jl")
 # SGs, buses:2,3,4,5,27,30    IBRs, buses:1,23,26
 
 matfile = matopen("AS_offer_price.mat")
-A = read(matfile, "SCL_offer_price")  
+A = read(matfile, "AS_offer_price")  
 close(matfile)
 
 
@@ -27,6 +27,9 @@ v=0.1        # gap for classification
 I_SCC_all_buses_scenarios, matrix_ω =dataset_gene(I_IBG, β,v_n)                                                            # data set generation                      
 K_g, K_c, K_m, N_type_1, N_type_2, err_type_1, err_type_2= offline_trainning(I_SCC_all_buses_scenarios, matrix_ω, Iₗᵢₘ, v)  # offline_trainning
 
+K_g[10,26]/(K_g[9,26]+K_g[10,26])
+K_g[1,30]/(K_g[1,30]+K_g[2,30]+K_g[3,30]+K_g[4,30]+K_g[5,30]+K_g[9,30]+K_g[10,30])
+
 
 
 #-----------------------------------Define Parameters for Optimization-----------------------------------        # Wind_bus_1
@@ -38,8 +41,6 @@ IBG₁=250*ones(T,1)
 IBG₂₃=250*ones(T,1)
 IBG₂₆=250*ones(T,1)
 
-b=Load_total-IBG₁-IBG₂₃-IBG₂₆  # check the load balance, the result should be 0
-(sum(IBG₁)+sum(IBG₂₃)+sum(IBG₂₆) )/sum(Load_total)
 
 Pˢᴳₘₐₓ=[6.584, 5.760, 3.781, 3.335, 3.252, 2.880]*10^3/5     #   Max generation of SGs                    SGs, buses:2,3,4,5,27,30
 Pˢᴳₘᵢₙ=[3.292, 2.880, 1.512, 0.667, 0.650, 0.288]*10^3/5      #   Min generation of SGs                   SGs, buses:2,3,4,5,27,30
@@ -619,12 +620,13 @@ end
 
 
 
-#-------Define Objective Functions with binary expansion
+#-------Define Objective Functions with binary expansion  （!!!!!!!!!!!VERY CRITICAL!!!!!!!!!!!!）
 @variable(model, z_Re_E_g1[1:T])    # define auxiliary variables of McCormick envelopes
 @variable(model, z_Re_E_g2[1:T])
 @variable(model, z_Bid_E_g1[1:T])
 @variable(model, z_Bid_E_g2[1:T])
 
+#M_λ=21.21
 M_λ=kᵐᵐᵃˣ*Oᵐ₂[5]
 
 for t in 1:T
@@ -656,9 +658,9 @@ M_F_26=zeros(1,T)
 M_F_29=zeros(1,T)
 M_F_30=zeros(1,T)
 for t in 1:T
-    M_F_26[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,1],A[t,4],A[t,7],A[t,10],A[t,13],A[t,16],A[t,19],A[t,22],A[t,25],A[t,28],A[t,31],A[t,34]])
-    M_F_29[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,2],A[t,5],A[t,8],A[t,11],A[t,14],A[t,17],A[t,20],A[t,23],A[t,26],A[t,29],A[t,32],A[t,35]])
-    M_F_30[1,t]=kᴬˢᵐᵃˣ*maximum([A[t,3],A[t,6],A[t,9],A[t,12],A[t,15],A[t,18],A[t,21],A[t,24],A[t,27],A[t,30],A[t,33],A[t,36]])
+    M_F_26[1,t]=A[t,25]+A[t,28]
+    M_F_29[1,t]=0
+    M_F_30[1,t]=kᴬˢᵐᵃˣ*(A[t,3]+A[t,6])+A[t,9]+A[t,12]+A[t,15]+A[t,18]+A[t,21]+A[t,24]+A[t,27]+A[t,30]
 end
 
 @variable(model, z_Re_26_g1[1:T]>=0)    # equal to λ_F*y_g, SG 1， bus 26
@@ -742,9 +744,9 @@ end
 #-------Define Objective Functions 
 cost_nl_UL=sum(Oⁿˡ[1].*yˢᴳ²_1 ) + sum(Oⁿˡ[1].*yˢᴳ²_2 )                  # no-load cost of strategic SGs
 cost_gene_UL=sum(Oᵐ₁[1].*Pˢᴳ²_1) + sum(Oᵐ₂[1].*Pˢᴳ²_2)               # generation cost of strategic SGs 
-cost_onoff_UL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ²_2)+sum(Cᴰ²_2)     # on/off cost of strategic SGs
+cost_onoff_UL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ²_2)+sum(Cᴰ²_2)            # on/off cost of strategic SGs
 revenue_energy_UL=sum( z_Re_E_g1 )+sum( z_Re_E_g2 )                   # revenue from market clearing
-revenue_SCL_UL=sum(z_Re_26_g1)+sum(z_Re_26_g2)+sum(z_Re_29_g1)+sum(z_Re_29_g2)+sum(z_Re_30_g1)+sum(z_Re_30_g2)                                     # revenue from commit online to offer AS
+revenue_SCL_UL=0*sum(z_Re_26_g1) +0*sum(z_Re_26_g2) +0*sum(z_Re_29_g1) +0*sum(z_Re_29_g2) +0.068*sum(z_Re_30_g1) +0.069*sum(z_Re_30_g2)                                     # revenue from commit online to offer AS
 obj_UL=revenue_energy_UL +revenue_SCL_UL -cost_nl_UL -cost_gene_UL -cost_onoff_UL    # objective function of UL
 
 cost_onoff_LL=sum(Cᵁ²_1)+sum(Cᴰ²_1)+sum(Cᵁ³_1)+sum(Cᴰ³_1)+sum(Cᵁ⁴_1)+sum(Cᴰ⁴_1)+sum(Cᵁ⁵_1)+sum(Cᴰ⁵_1)+sum(Cᵁ²⁷_1)+sum(Cᴰ²⁷_1)+sum(Cᵁ³⁰_1)+sum(Cᴰ³⁰_1)  +sum(Cᵁ²_2)+sum(Cᴰ²_2)+sum(Cᵁ³_2)+sum(Cᴰ³_2)+sum(Cᵁ⁴_2)+sum(Cᴰ⁴_2)+sum(Cᵁ⁵_2)+sum(Cᴰ⁵_2)+sum(Cᵁ²⁷_2)+sum(Cᴰ²⁷_2)+sum(Cᵁ³⁰_2)+sum(Cᴰ³⁰_2)       
@@ -788,7 +790,7 @@ obj_DLL_3=  (P_g₀[1]*πʳᵈˢᴳ²_1[1] +P_g₀[1]*πʳᵈˢᴳ²_2[1]) -(P_g
 
 obj_DLL=sum( obj_DLL_1 ) +sum(obj_DLL_2) +obj_DLL_3+ sum(Iₗᵢₘ.*λ_F[1,:])+ sum(Iₗᵢₘ.*λ_F[2,:])+ sum(Iₗᵢₘ.*λ_F[3,:])
 
-W=10
+W=100
 #@constraint(model, obj_LL-obj_DLL>=0)  
 @objective(model, Max, obj_UL-W*(obj_LL-obj_DLL))  # objective function
 #-------Solve and Output Results
@@ -826,7 +828,6 @@ Pˢᴳ²⁷_1=JuMP.value.(Pˢᴳ²⁷_1)
 Pˢᴳ²⁷_2=JuMP.value.(Pˢᴳ²⁷_2)
 Pˢᴳ³⁰_1=JuMP.value.(Pˢᴳ³⁰_1)
 Pˢᴳ³⁰_2=JuMP.value.(Pˢᴳ³⁰_2)
-
 yˢᴳ³_1=JuMP.value.(yˢᴳ³_1)
 yˢᴳ³_2=JuMP.value.(yˢᴳ³_2)
 yˢᴳ⁴_1=JuMP.value.(yˢᴳ⁴_1)
@@ -871,8 +872,12 @@ kᵐ_2=JuMP.value.(kᵐ_2)
 I_₂₆=JuMP.value.(I_₂₆)
 I_₂₉=JuMP.value.(I_₂₉)
 I_₃₀=JuMP.value.(I_₃₀)
-plot(kᵐ_1)
-plot!(kᵐ_2)
+bar(λᴱ)
+
+plot(I_₂₆)
+plot!(I_₂₉)
+plot!(I_₃₀)
+
 
 plot(λ_F[1,:])
 plot!(λ_F[2,:])
@@ -880,110 +885,6 @@ plot!(λ_F[3,:])
 
 plot(kᵐ_1)
 plot!(kᵐ_2)
-
-
-#-----------calculate market power
-λᴱ=JuMP.value.(λᴱ) 
-MP_SCL_SG_21_26=0
-MP_SCL_SG_21_30=0
-MP_SCL_SG_22_26=0
-MP_SCL_SG_22_30=0
-MP_SCL_SG_31_26=0
-MP_SCL_SG_31_30=0
-MP_SCL_SG_32_26=0
-MP_SCL_SG_32_30=0
-MP_SCL_SG_41_26=0
-MP_SCL_SG_41_30=0
-MP_SCL_SG_42_26=0
-MP_SCL_SG_42_30=0
-MP_SCL_SG_51_26=0
-MP_SCL_SG_51_30=0
-MP_SCL_SG_52_26=0
-MP_SCL_SG_52_30=0
-MP_SCL_SG_271_26=0
-MP_SCL_SG_271_30=0
-MP_SCL_SG_272_26=0
-MP_SCL_SG_272_30=0
-for t in 1:T
-    if λ_F[1,t]!=0
-        MP_SCL_SG_21_26=MP_SCL_SG_21_26+1- (A[t,1])/(λ_F[1,t])
-        MP_SCL_SG_22_26=MP_SCL_SG_22_26+1- (A[t,4])/(λ_F[1,t])
-        MP_SCL_SG_31_26=MP_SCL_SG_31_26+1- (A[t,7])/(λ_F[1,t])
-        MP_SCL_SG_32_26=MP_SCL_SG_32_26+1- (A[t,10])/(λ_F[1,t])
-        MP_SCL_SG_41_26=MP_SCL_SG_41_26+1- (A[t,13])/(λ_F[1,t])
-        MP_SCL_SG_42_26=MP_SCL_SG_42_26+1- (A[t,16])/(λ_F[1,t])
-        MP_SCL_SG_51_26=MP_SCL_SG_51_26+1- (A[t,19])/(λ_F[1,t])
-        MP_SCL_SG_52_26=MP_SCL_SG_52_26+1- (A[t,22])/(λ_F[1,t])
-        MP_SCL_SG_271_26=MP_SCL_SG_271_26+1- (A[t,25])/(λ_F[1,t])
-        MP_SCL_SG_272_26=MP_SCL_SG_272_26+1- (A[t,28])/(λ_F[1,t])
-    end
-    if λ_F[3,t]!=0
-        MP_SCL_SG_21_30=MP_SCL_SG_21_30+1- (A[t,3])/(λ_F[3,t])
-        MP_SCL_SG_22_30=MP_SCL_SG_22_30+1- (A[t,6])/(λ_F[3,t])
-        MP_SCL_SG_31_30=MP_SCL_SG_31_30+1- (A[t,9])/(λ_F[3,t])
-        MP_SCL_SG_32_30=MP_SCL_SG_32_30+1- (A[t,12])/(λ_F[3,t])
-        MP_SCL_SG_41_30=MP_SCL_SG_41_30+1- (A[t,15])/(λ_F[3,t])
-        MP_SCL_SG_42_30=MP_SCL_SG_42_30+1- (A[t,18])/(λ_F[3,t])
-        MP_SCL_SG_51_30=MP_SCL_SG_51_30+1- (A[t,21])/(λ_F[3,t])
-        MP_SCL_SG_52_30=MP_SCL_SG_52_30+1- (A[t,24])/(λ_F[3,t])
-        MP_SCL_SG_271_30=MP_SCL_SG_271_30+1- (A[t,27])/(λ_F[3,t])
-        MP_SCL_SG_272_30=MP_SCL_SG_272_30+1- (A[t,30])/(λ_F[3,t])
-
-    end
-end
-
-
-λ_F=JuMP.value.(λ_F) 
-MP_SCL_SG_21_26=0
-MP_SCL_SG_21_30=0
-MP_SCL_SG_22_26=0
-MP_SCL_SG_22_30=0
-MP_SCL_SG_31_26=0
-MP_SCL_SG_31_30=0
-MP_SCL_SG_32_26=0
-MP_SCL_SG_32_30=0
-MP_SCL_SG_41_26=0
-MP_SCL_SG_41_30=0
-MP_SCL_SG_42_26=0
-MP_SCL_SG_42_30=0
-MP_SCL_SG_51_26=0
-MP_SCL_SG_51_30=0
-MP_SCL_SG_52_26=0
-MP_SCL_SG_52_30=0
-MP_SCL_SG_271_26=0
-MP_SCL_SG_271_30=0
-MP_SCL_SG_272_26=0
-MP_SCL_SG_272_30=0
-for t in 1:T
-    if λ_F[1,t]!=0
-        MP_SCL_SG_21_26=MP_SCL_SG_21_26+1- (A[t,1])/(λ_F[1,t])
-        MP_SCL_SG_22_26=MP_SCL_SG_22_26+1- (A[t,4])/(λ_F[1,t])
-        MP_SCL_SG_31_26=MP_SCL_SG_31_26+1- (A[t,7])/(λ_F[1,t])
-        MP_SCL_SG_32_26=MP_SCL_SG_32_26+1- (A[t,10])/(λ_F[1,t])
-        MP_SCL_SG_41_26=MP_SCL_SG_41_26+1- (A[t,13])/(λ_F[1,t])
-        MP_SCL_SG_42_26=MP_SCL_SG_42_26+1- (A[t,16])/(λ_F[1,t])
-        MP_SCL_SG_51_26=MP_SCL_SG_51_26+1- (A[t,19])/(λ_F[1,t])
-        MP_SCL_SG_52_26=MP_SCL_SG_52_26+1- (A[t,22])/(λ_F[1,t])
-        MP_SCL_SG_271_26=MP_SCL_SG_271_26+1- (A[t,25])/(λ_F[1,t])
-        MP_SCL_SG_272_26=MP_SCL_SG_272_26+1- (A[t,28])/(λ_F[1,t])
-    end
-    if λ_F[3,t]!=0
-        MP_SCL_SG_21_30=MP_SCL_SG_21_30+1- (A[t,3])/(λ_F[3,t])
-        MP_SCL_SG_22_30=MP_SCL_SG_22_30+1- (A[t,6])/(λ_F[3,t])
-        MP_SCL_SG_31_30=MP_SCL_SG_31_30+1- (A[t,9])/(λ_F[3,t])
-        MP_SCL_SG_32_30=MP_SCL_SG_32_30+1- (A[t,12])/(λ_F[3,t])
-        MP_SCL_SG_41_30=MP_SCL_SG_41_30+1- (A[t,15])/(λ_F[3,t])
-        MP_SCL_SG_42_30=MP_SCL_SG_42_30+1- (A[t,18])/(λ_F[3,t])
-        MP_SCL_SG_51_30=MP_SCL_SG_51_30+1- (A[t,21])/(λ_F[3,t])
-        MP_SCL_SG_52_30=MP_SCL_SG_52_30+1- (A[t,24])/(λ_F[3,t])
-        MP_SCL_SG_271_30=MP_SCL_SG_271_30+1- (A[t,27])/(λ_F[3,t])
-        MP_SCL_SG_272_30=MP_SCL_SG_272_30+1- (A[t,30])/(λ_F[3,t])
-
-    end
-end
-
-
-
 
 cost_onoff_G3_1=sum(Cᵁ³_1)+sum(Cᴰ³_1)   # G3_1
 cost_nl_G3_1=sum(Oⁿˡ[2].*yˢᴳ³_1)   
