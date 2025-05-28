@@ -1,34 +1,26 @@
-# SCL_UC_Bilevel
-**This is a test.**
+# Short-circuit level+UC+Bi-level:Case studies for examining market power
 
-Here is the road I chose to do this research:
-Start with easy parts, it means let's first figure out simple and clear concepts and build the whole model step by step. For me, I started with a single-level model with UC and SCL constraints, considering a system only has 3 buses that meet a basic economic dispatch framework. Then, I escalated it to be a modified IEEE-30 bus system proposed in paper by Chongda (Feb,19,2025. Madrid). Finally, I will dive into how to insert bilevel in to the current model, which is my final goal.
+**PLEASE NOTE, the main models and methodologies are in the listed papers here. Fully understanding these works is the foundation of our work**
+- Short-Circuit Level (SCL) models refer to:
+1. Chu, Zhongda, and Fei Teng. ["Short circuit current constrained UC in high IBG-penetrated power systems." IEEE Transactions on Power Systems 36.4 (2021): 3776-3785.](https://ieeexplore.ieee.org/abstract/document/9329077)
+2. Chu, Zhongda, Jingyi Wu, and Fei Teng. ["Pricing of short circuit current in high IBR-penetrated system." Electric Power Systems Research 235 (2024): 110690.](https://www.sciencedirect.com/science/article/pii/S0378779624005765)
+- Primal-Dual formulation for addressing UC issues refer to:
+1. Ye, Yujian, et al. ["Incorporating non-convex operating characteristics into bi-level optimization electricity market models." IEEE Transactions on Power Systems 35.1 (2019): 163-176.](https://ieeexplore.ieee.org/abstract/document/8746573)
 
+**EXPLANATION abot how to use the code of our work**
 
-This code solves a **SCL_UC_Bilevel**.
+The work is mainly made of two parts:
+1. Modelling of SCL.
+2. Modelling of primal-dual formulation.
 
-The main elements of this work include:
-- [Stackelberg game](https://en.wikipedia.org/wiki/Stackelberg_competition)
-- [Bilevel model](https://en.wikipedia.org/wiki/Bilevel_optimization)
-- [Big-M method](https://en.wikipedia.org/wiki/Big_M_method)
-- [Karush–Kuhn–Tucker conditions](https://en.wikipedia.org/wiki/Karush%E2%80%93Kuhn%E2%80%93Tucker_conditions)
-- [Distribution system operator (DSO)](https://www.camus.energy/blog/what-is-a-distribution-system-operator)
-- [Virtual power plant (VPP)](https://en.wikipedia.org/wiki/Virtual_power_plant)
-- [Julia programming](https://julialang.org/)
-
-
-The main work includes:
-- Model building and solving: In the Bilevel model, DSO maximizes profits in the upper level, which requires the Big-M method to build its model. VPPs take the prices set by DSO and minimize their respective operating costs in the lower level, and they are converted into KKT conditions for further solution. DSO and VPPs are in a Stackelberg game relationship.
-- Transaction behavior analysis: The selfish transaction behaviors of DSO and VPPs are analyzed, which highlight the role of DSO in trading. Their respective profits or costs have been improved, and the explicit benefits of non-strategic player have been compromised, but the overall (whole system or market) benefits are reserved, only the distribution of benefits has changed.
-
+We try to guide you to understand our logistics of coding, once you fully understand, then analyze any power systems you like.
+- For the code of SCL modelling, please refer to the file named "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_" and "_offline_trainning.jl_".
+  -"_admittance_matrix_calculation.jl_" calculates the IMPEDANCE of transmission lines
 
 The following is the program running process (assuming it is in Visual Studio Code):
 - Step 1: How to install [Julia in VsCode](https://code.visualstudio.com/docs/languages/julia).
 - Step 2: In the comments of this code, there are necessary package installation instructions, just copy and paste them.
 - Step 3: Run the program.
-
-**Note that this work can be easily extended to larger-scale problems because of the structural independence of each agent, such as those involving more
-aggregators and DER, and market mechanisms (demand response, time-of-use tariff, etc.).**
 
 ----
 
