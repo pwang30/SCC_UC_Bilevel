@@ -35,7 +35,7 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 If you find something helpful or use this code for your own work, please cite this paper:
 <ol>
-      Wang, Peng, Xi Zhang, and Luis Badesa. "Analyzing the Role of the DSO in Electricity Trading of VPPs via a Stackelberg Game Model." arXiv preprint arXiv:2501.07715 (2025).
+      Wang, Peng and Luis Badesa. " ." arXiv preprint arXiv:2501.07715 (2025).
 </ol>
       <br>
       
