@@ -22,9 +22,9 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
   "_offline_trainning.jl_" is the trainning process, with inputting parameters from above subfunctions.
 
-- For the code of primal-dual modelling, i.e., the final bi-level model running, as we have several scenarios, here we only publich lodal strategic bidding in Bus 2 and distant strategic bidding in Bus 27 and Bus 4. Other cases are easy to be simulated by following a similar coding structure. As for the pricing of SCL service by the single-level formulation, please do it by readers yourselves, however we still give the offer we used in the paper (the file named "AS_offer"). 
+- For the code of primal-dual modelling, i.e., the final bi-level model running, as we have several scenarios, here we only publich lodal strategic bidding in Bus 2 and distant strategic bidding in Bus 27 and Bus 4. Other cases are easy to be simulated by following a similar coding structure. As for the pricing of SCL service by the single-level formulation, please do it by readers yourselves, however we still give the offer we used in the paper (the file named "AS_offer_price.mat"). 
 
-- In the practical simulation, please put all files in one folder, then run the main file "_bi_level_SCL_Local_Bus2.jl_"
+- In the practical simulation, please put all files in one folder, e.g., "_bi_level_SCL_Local_Bus2.jl_", "_bi_level_SCL_distant.jl_", "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_", "_offline_trainning.jl_" and "_Linespara_". Then run the main file "_bi_level_SCL_Local_Bus2.jl_" or "_bi_level_SCL_distant.jl_". 
 ----
 
 If you find something helpful or use this code for your own work, please cite this paper:
