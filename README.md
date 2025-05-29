@@ -27,7 +27,10 @@ We try to guide you to understand our logistics of coding, once you fully unders
   1. As we have several scenarios, here we only publich lodal strategic bidding in Bus 2 and distant strategic bidding in Bus 27 and Bus 4. Other cases are easy to be simulated by following a similar coding structure.
   2. As for the pricing of SCL service by the single-level formulation, please do it by readers yourselves, however we still give the offer we used in the paper (the file named "AS_offer_price.mat"). 
 
-- In the practical simulation, please put all files in one folder, e.g., "_bi_level_SCL_Local_Bus2.jl_", "_bi_level_SCL_distant.jl_", "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_", "_offline_trainning.jl_" and "_Linespara_". Then run the main file "_bi_level_SCL_Local_Bus2.jl_" or "_bi_level_SCL_distant.jl_". 
+- In the practical simulation, please put all files in one folder, e.g., "_bi_level_SCL_Local_Bus2.jl_", "_bi_level_SCL_distant.jl_", "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_", "_offline_trainning.jl_", "Linespara" and "AS_offer_price.mat". Then run the main file "_bi_level_SCL_Local_Bus2.jl_" or "_bi_level_SCL_distant.jl_".
+
+**NOTE the linearized SCL constraints are given in "_Actual_SCL_equation.jl_".**
+
 ----
 
 If you find something helpful or use this code for your own work, please cite this paper:
