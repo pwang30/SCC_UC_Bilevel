@@ -1,4 +1,4 @@
-# Short-circuit current+UC+Bi-level:Case studies for examining market power
+# Short-circuit current+UC+Bi-level: Case studies for examining market power
 
 **PLEASE NOTE, the main models and methodologies are in the listed papers here. Fully understanding these works is the foundation of our work.**
 - Short-Circuit Current (SCC) models refer to:
@@ -18,7 +18,7 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
   1. "_admittance_matrix_calculation.jl_" calculates the impedance of transmission lines of the system, easy to follow.
 
-  2. "_dataset_gene.jl_" generates the data for classification, i.e., the offline trainning process mentioned in the second chapter of our paper. The subfunction "_admittance_matrix_calculation.jl_" is called here to obtain the transmissin line admittance matrix which is combined with the generators' admittance matrix (refer to line 76 in "_dataset_gene.jl_", from line 79-86, it is the equation of actual, exact SCL representation). The remainder of code is generating all possible UC status pairs of generators. The matrix "I_SCC_all_buses_scenarios" are the SCC corresponding to "matrix_ω" (storing UC status and capacity factor of IBR, comprising all possible scenarios).
+  2. "_dataset_gene.jl_" generates the data for classification, i.e., the offline trainning process mentioned in the second chapter of our paper. The subfunction "_admittance_matrix_calculation.jl_" is called here to obtain the transmissin line admittance matrix which is combined with the generators' admittance matrix (refer to line 76 in "_dataset_gene.jl_", from line 79-86, it is the equation of actual, exact SCC representation). The remainder of code is generating all possible UC status pairs of generators. The matrix "I_SCC_all_buses_scenarios" are the SCC corresponding to "matrix_ω" (storing UC status and capacity factor of IBR, comprising all possible scenarios).
 
   3. "_offline_trainning.jl_" is the trainning process, with inputting parameters from above subfunctions.
 
