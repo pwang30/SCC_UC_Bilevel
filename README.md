@@ -24,8 +24,8 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 - For the code of primal-dual modelling, i.e., the final bi-level model running, please refer to the files named "_bi_level_SCL_Local_Bus2.jl_", "_bi_level_SCL_distant.jl_" in foler called "Strategic_bidding".
 
-  1. As we have numerous scenarios, here we only publich lodal strategic bidding in Bus 2 and distant strategic bidding in Bus 27 and Bus 4. Other cases are easy to be simulated by following a similar coding structure.
-  2. As for the pricing of SCC service by the single-level formulation, please do it by readers yourselves, however we still give the offer we used in the paper (the file named "AS_offer_price.mat"). 
+  1. As we have numerous scenarios, here we only publish the case where two strategic generators located in bus 2 and the case where three strategic generators located in bus 2 and bus 27. Other cases are easy to be simulated by following a similar coding structure.
+  2. As for the pricing of SCC service by the single-level formulation, please do it by readers yourselves, however we still give the marginal bid we used in the paper (the file named "AS_offer_price.mat"). 
 
 - In the practical simulation, please put all files in one folder, e.g., "_bi_level_SCL_Local_Bus2.jl_", "_bi_level_SCL_distant.jl_", "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_", "_offline_trainning.jl_", "Linespara" and "AS_offer_price.mat". Then run the main file "_bi_level_SCL_Local_Bus2.jl_" or "_bi_level_SCL_distant.jl_".
 
