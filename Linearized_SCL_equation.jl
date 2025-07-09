@@ -1,6 +1,6 @@
 # Author:     Peng Wang     from Technical University of Madrid (UPM)
 # Supervisor: Luis Badesa   from Technical University of Madrid (UPM)
-# Linearized SCL constraint.
+# Full form of SCC constraint.
 
 for t in 1:T   
     @constraint(model, I_scc[t]==K_g[1,k]*yˢᴳ²_1[t]+ K_g[2,k]*yˢᴳ²_2[t]+ 
