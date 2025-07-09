@@ -29,7 +29,7 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 - In the practical simulation, please put all files in one folder, e.g., "_bi_level_SCL_Local_Bus2.jl_", "_More_two_various_21_271_272.jl_", "_admittance_matrix_calculation.jl_", "_dataset_gene.jl_", "_offline_trainning.jl_", "Linespara" and "AS_offer_price.mat". Then run the main files "_bi_level_SCL_Local_Bus2.jl_" or "_More_two_various_21_271_272.jl_".
 
-**NOTE the linearized SCC constraints are given in "_Linearized_SCL_equation.jl_".**
+**NOTE the linearized SCC constraints are given in "_Linearized_SCL_equation.jl_" for readers who have interests.**
 
 ----
 
