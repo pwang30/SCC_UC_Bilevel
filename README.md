@@ -35,15 +35,17 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 If you find something helpful or use this code for your own work, please cite [this paper](https://arxiv.org/abs/2508.09425v1):
 <ol>
-      Peng Wang and Luis Badesa. " ." arXiv preprint arXiv:2508.09425 (2025).
+      Peng Wang and Luis Badesa, "**Imperfect Competition in Markets for Short-Circuit Current Services**," arXiv preprint arXiv:2508.09425 (2025).
 </ol>
       <br>
       
 <ol> 
-@misc{-, <br>
+@misc{Wang2025, <br>
       title={Imperfect Competition in Markets for Short-Circuit Current Services}, <br>
       author={Peng Wang and Luis Badesa},<br>
       year={2025},<br>
       eprint={2508.09425},<br>
       archivePrefix={arXiv},<br>
       primaryClass={eess.SY},<br>
+      url={https://arxiv.org/abs/2508.09425},<br>
+}
