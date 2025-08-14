@@ -33,7 +33,7 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 ----
 
-If you find something helpful or use this code for your own work, please cite [this paper](https://arxiv.org/abs/2508.09425v1):
+If you find something helpful or use this code for your own work, please cite [this paper](https://arxiv.org/abs/2508.09425):
 <ol>
       Peng Wang and Luis Badesa, "<b>Imperfect Competition in Markets for Short-Circuit Current Services</b>," arXiv preprint arXiv:2508.09425 (2025).
 </ol>
