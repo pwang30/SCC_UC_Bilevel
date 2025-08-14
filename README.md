@@ -1,6 +1,6 @@
-# Short-circuit current+UC+Bi-level: Case studies for examining market power
+# Short-circuit current + UC + Bi-level: Case studies for examining market power
 
-**PLEASE NOTE, the main models and methodologies are in the listed papers here. Fully understanding these works is the foundation of our work.**
+**PLEASE NOTE, the models and methodologies that this work is based on were introduced in the following papers. Fully understanding these is the foundation of our work:**
 - Short-Circuit Current (SCC) models refer to:
   1. Chu, Zhongda, and Fei Teng. ["Short circuit current constrained UC in high IBG-penetrated power systems." IEEE Transactions on Power Systems 36.4 (2021): 3776-3785.](https://ieeexplore.ieee.org/abstract/document/9329077)
   2. Chu, Zhongda, Jingyi Wu, and Fei Teng. ["Pricing of short circuit current in high IBR-penetrated system." Electric Power Systems Research 235 (2024): 110690.](https://www.sciencedirect.com/science/article/pii/S0378779624005765)
@@ -35,7 +35,7 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 If you find something helpful or use this code for your own work, please cite [this paper](https://arxiv.org/abs/2508.09425v1):
 <ol>
-      Peng Wang and Luis Badesa, "**Imperfect Competition in Markets for Short-Circuit Current Services**," arXiv preprint arXiv:2508.09425 (2025).
+      Peng Wang and Luis Badesa, "<b>Imperfect Competition in Markets for Short-Circuit Current Services</b>b>," arXiv preprint arXiv:2508.09425 (2025).
 </ol>
       <br>
       
