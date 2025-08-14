@@ -33,17 +33,17 @@ We try to guide you to understand our logistics of coding, once you fully unders
 
 ----
 
-If you find something helpful or use this code for your own work, please cite this paper:
+If you find something helpful or use this code for your own work, please cite [this paper](https://arxiv.org/abs/2508.09425v1):
 <ol>
-      Wang, Peng and Luis Badesa. " ." arXiv preprint arXiv:2501.07715 (2025).
+      Peng Wang and Luis Badesa. " ." arXiv preprint arXiv:2508.09425 (2025).
 </ol>
       <br>
       
 <ol> 
-@misc{wang2025analyzingroledsoelectricity, <br>
-      title={Analyzing the Role of the DSO in Electricity Trading of VPPs via a Stackelberg Game Model}, <br>
-      author={Peng Wang and Xi Zhang and Luis Badesa},<br>
+@misc{-, <br>
+      title={Imperfect Competition in Markets for Short-Circuit Current Services}, <br>
+      author={Peng Wang and Luis Badesa},<br>
       year={2025},<br>
-      eprint={2501.07715},<br>
+      eprint={2508.09425},<br>
       archivePrefix={arXiv},<br>
       primaryClass={eess.SY},<br>
