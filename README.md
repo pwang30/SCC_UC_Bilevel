@@ -40,12 +40,9 @@ If you find something helpful or use this code for your own work, please cite [t
       <br>
       
 <ol> 
-@misc{Wang2025, <br>
-      title={Imperfect Competition in Markets for Short-Circuit Current Services}, <br>
-      author={Peng Wang and Luis Badesa},<br>
-      year={2025},<br>
-      eprint={2508.09425},<br>
-      archivePrefix={arXiv},<br>
-      primaryClass={eess.SY},<br>
-      url={https://arxiv.org/abs/2508.09425},<br>
+@article{wang2025imperfect, <br>
+  title={Imperfect Competition in Markets for Short-Circuit Current Services}, <br>
+  author={Wang, Peng and Badesa, Luis}, <br>
+  journal={arXiv preprint arXiv:2508.09425}, <br>
+  year={2025} <br>
 }
