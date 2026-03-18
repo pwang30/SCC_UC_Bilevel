@@ -90,10 +90,20 @@ function dataset_gene(I_IBG,β,v)
     
     return I_SCC_all_buses_scenarios, matrix_ω
 
-
+end
                 for i in 1:length(SGpara[:,2:end])
                 Y_SGs_with_status[Int(SGpara[i, 1]), Int(SGpara[i, 1])] = Y_SGs[i] * status_SGs[i]  # status of SGs
             end
     
+
+                I_SCC_all_buses_scenarios[k,j] = (
+                Z[j,2]*I_SGs[1]*status_SGs[1]+
+                Z[j,3]*I_SGs[2]*status_SGs[2]+
+                Z[j,4]*I_SGs[3]*status_SGs[3]+
+                Z[j,5]*I_SGs[4]*status_SGs[4]+
+                Z[j,27]*I_SGs[5]*status_SGs[5]+
+                Z[j,30]*I_SGs[6]*status_SGs[6]+
+                Z[j,1]*I_IBG*status_IBG[1]+ Z[j,23]*I_IBG*status_IBG[2]+ Z[j,26]*I_IBG*status_IBG[3])/Z[j,j]   # calculate the SCC for SGs, buses:2,3,4,5,27,30
+
+
     
-end
