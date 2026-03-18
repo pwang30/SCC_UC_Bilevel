@@ -89,6 +89,11 @@ function dataset_gene(I_IBG,β,v)
     end
     
     return I_SCC_all_buses_scenarios, matrix_ω
+
+
+                for i in 1:length(SGpara[:,2:end])
+                Y_SGs_with_status[Int(SGpara[i, 1]), Int(SGpara[i, 1])] = Y_SGs[i] * status_SGs[i]  # status of SGs
+            end
     
     
 end
